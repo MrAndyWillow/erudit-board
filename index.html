@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Эрудит Помощник Pro</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono-custom {
+      font-family: 'Fira Code', monospace;
+    }
+    /* Стилизация скроллбара */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    /* Текстура фишки дерева */
+    .wood-tile {
+      background: radial-gradient(circle, rgba(63,43,21,1) 0%, rgba(41,27,12,1) 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 4px 6px -1px rgba(0,0,0,0.5);
+    }
+    /* Эффект свечения */
+    .glow-green { box-shadow: 0 0 12px rgba(34, 197, 94, 0.4); }
+    .glow-blue { box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); }
+    .glow-orange { box-shadow: 0 0 12px rgba(249, 115, 22, 0.4); }
+    .glow-red { box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
+
+    /* Собственная сетка для идеального отображения доски 15х15 с боковым индексом */
+    .board-grid-row {
+      display: grid;
+      grid-template-columns: 24px repeat(15, minmax(0, 1fr));
+      gap: 3px;
+      align-items: center;
+    }
+    .board-cell-btn {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-radius: 0.25rem;
+      transition: all 150ms ease;
+      outline: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+
+  <!-- Навигационная панель -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="bg-gradient-to-br from-amber-500 to-red-600 p-2.5 rounded-xl shadow-lg shadow-amber-500/20">
+        <i data-lucide="brain-circuit" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-orange-300 to-indigo-400">
+          ЭРУДИТ ПОМОЩНИК
+        </h1>
+        <p class="text-xs text-slate-400">Интеллектуальный симулятор & анализатор ходов</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+      <button onclick="toggleRulesModal()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
+        <i data-lucide="book-open" class="w-4 h-4 text-amber-400"></i>
+        <span>Правила игры</span>
+      </button>
+      <button onclick="triggerFileInput()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
+        <i data-lucide="upload" class="w-4 h-4 text-indigo-400"></i>
+        <span>Загрузить словарь</span>
+      </button>
+      <input type="file" id="dictFileInput" accept=".txt" class="hidden" onchange="handleDictUpload(event)">
+      <button onclick="resetGame()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-red-900/40 hover:bg-red-800/60 border border-red-800 text-red-200 rounded-lg text-xs font-medium transition">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        <span>Сброс игры</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Основной контент -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto p-4 lg:p-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+    
+    <!-- Левая колонка: Виртуальная Доска -->
+    <section class="xl:col-span-7 flex flex-col items-center bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 lg:p-6 shadow-2xl relative">
+      <div class="w-full flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <h2 class="text-lg font-bold tracking-tight text-slate-200">Виртуальная доска 15х15</h2>
+        </div>
+        <div class="text-xs text-slate-400 flex space-x-4">
+          <span class="flex items-center"><span class="w-3 h-3 bg-red-500/30 border border-red-500 rounded mr-1"></span> x3 слово</span>
+          <span class="flex items-center"><span class="w-3 h-3 bg-orange-500/30 border border-orange-500 rounded mr-1"></span> x2 слово</span>
+          <span class="flex items-center"><span class="w-3 h-3 bg-sky-500/30 border border-sky-500 rounded mr-1"></span> x3 буква</span>
+          <span class="flex items-center"><span class="w-3 h-3 bg-emerald-500/30 border border-emerald-500 rounded mr-1"></span> x2 буква</span>
+        </div>
+      </div>
+
+      <!-- Контейнер для доски с адаптивной шириной -->
+      <div class="w-full overflow-auto flex justify-center py-2">
+        <div class="relative select-none bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-inner w-full max-w-[640px] min-w-[320px]">
+          <!-- Буквенные обозначения столбцов (А-П) -->
+          <div class="board-grid-row text-center text-[10px] font-bold text-slate-500 mb-1">
+            <div class="w-6"></div>
+            <!-- Столбцы -->
+            <div>А</div>
+            <div>Б</div>
+            <div>В</div>
+            <div>Г</div>
+            <div>Д</div>
+            <div>Е</div>
+            <div>Ж</div>
+            <div>З</div>
+            <div>И</div>
+            <div>К</div>
+            <div>Л</div>
+            <div>М</div>
+            <div>Н</div>
+            <div>О</div>
+            <div>П</div>
+          </div>
+
+          <!-- Строки доски -->
+          <div id="boardContainer" class="flex flex-col gap-[3px]">
+            <!-- Генерируется через JS -->
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 text-xs text-slate-400 text-center max-w-lg">
+        <i class="inline-block text-amber-500 font-bold">Подсказка:</i> Кликните на любую клетку на доске, чтобы быстро вписать/изменить букву вручную или пометить её как джокер.
+      </div>
+    </section>
+
+    <!-- Правая колонка: Панели Управления и Расчетов -->
+    <section class="xl:col-span-5 flex flex-col space-y-6">
+      
+      <!-- Панель статуса и очков игроков -->
+      <div class="grid grid-cols-2 gap-4 bg-slate-900/60 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="bg-gradient-to-br from-slate-900 to-indigo-950/40 p-3.5 rounded-xl border border-indigo-900/40 relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 text-indigo-500/10"><i data-lucide="user" class="w-20 h-20"></i></div>
+          <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Игрок (Вы)</span>
+          <div class="text-3xl font-extrabold text-slate-100 mt-1" id="playerScoreDisplay">0</div>
+          <p class="text-[10px] text-slate-400 mt-1">Очков набрано за партию</p>
+        </div>
+        <div class="bg-gradient-to-br from-slate-900 to-rose-950/40 p-3.5 rounded-xl border border-rose-900/40 relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 text-rose-500/10"><i data-lucide="swords" class="w-20 h-20"></i></div>
+          <span class="text-xs font-semibold text-rose-400 uppercase tracking-wider">Соперник</span>
+          <div class="text-3xl font-extrabold text-slate-100 mt-1" id="opponentScoreDisplay">0</div>
+          <p class="text-[10px] text-slate-400 mt-1">Очков набрано соперником</p>
+        </div>
+      </div>
+
+      <!-- Ввод фишек игрока (Текущая рука) -->
+      <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="hand" class="w-5 h-5 text-amber-400"></i>
+            <h3 class="font-bold text-slate-200">Моя подставка (буквы на руках)</h3>
+          </div>
+          <span class="text-xs text-slate-400" id="rackCount">0 / 7 букв</span>
+        </div>
+        
+        <!-- Инпут для подставки -->
+        <div class="flex gap-2">
+          <input type="text" id="rackInput" placeholder="Введите до 7 букв, например: СЛОНП**" 
+            class="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-600 uppercase tracking-widest font-mono-custom text-center focus:outline-none transition"
+            maxlength="7" oninput="formatRackInput(this)">
+          <button onclick="clearRack()" class="px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition" title="Очистить подставку">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-500 mt-2">Используйте символ <span class="text-amber-400 font-bold">*</span> (звёздочка) для обозначения джокеров/звезд на руках.</p>
+
+        <!-- Быстрые кнопки фишек -->
+        <div id="rackTilesDisplay" class="flex flex-wrap gap-2 mt-3 justify-center min-h-[44px]">
+          <!-- Здесь будут красиво рендериться фишки на подставке -->
+        </div>
+      </div>
+
+      <!-- Переключатель вкладок: Подбор ходов / Запись вручную / Мешок -->
+      <div class="bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 flex space-x-1 shadow-lg">
+        <button onclick="switchTab('suggestions')" id="tabBtn-suggestions" class="flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 bg-indigo-600 text-white">
+          <i class="inline-block w-3.5 h-3.5 mr-1" data-lucide="sparkles"></i> Умный подбор
+        </button>
+        <button onclick="switchTab('manual')" id="tabBtn-manual" class="flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200">
+          <i class="inline-block w-3.5 h-3.5 mr-1" data-lucide="edit"></i> Записать ход
+        </button>
+        <button onclick="switchTab('bag')" id="tabBtn-bag" class="flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200">
+          <i class="inline-block w-3.5 h-3.5 mr-1" data-lucide="package"></i> Оставшийся мешок
+        </button>
+      </div>
+
+      <!-- ВКЛАДКА 1: Умный подбор ходов -->
+      <div id="tabContent-suggestions" class="space-y-4 tab-content">
+        <!-- Блок настроек подбора -->
+        <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+          <div>
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Поиск лучших ходов</h4>
+            <p class="text-[10px] text-slate-400" id="dictionaryStatus">Загрузка встроенного словаря...</p>
+          </div>
+          <button onclick="calculateSuggestions()" class="bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-emerald-950/50">
+            <i data-lucide="zap" class="w-4 h-4 animate-bounce"></i>
+            <span>Рассчитать ходы</span>
+          </button>
+        </div>
+
+        <!-- Контейнер с предложениями -->
+        <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col min-h-[300px]">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+            <h4 class="font-bold text-slate-200 text-sm">Рекомендации ходов</h4>
+            <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full" id="suggestionsCount">Найдено: 0</span>
+          </div>
+
+          <div id="suggestionsList" class="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+            <div class="text-center py-12 text-slate-500">
+              <i data-lucide="search-code" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i>
+              <p class="text-xs">Введите буквы на подставку и нажмите «Рассчитать ходы» для поиска наилучших вариантов размещения.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА 2: Записать ход вручную -->
+      <div id="tabContent-manual" class="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 tab-content hidden">
+        <h4 class="font-bold text-slate-200 text-sm pb-2 border-b border-slate-800">Зарегистрировать ход вручную</h4>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Кто походил?</label>
+            <select id="manualPlayer" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="player">Вы (Игрок)</option>
+              <option value="opponent">Соперник</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Слово (только буквы)</label>
+            <div class="relative">
+              <input type="text" id="manualWord" placeholder="Например: СЛОН" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-10 py-2 text-xs text-slate-100 uppercase tracking-widest focus:outline-none focus:border-indigo-500">
+              <!-- КНОПКА УДАЛЕНИЯ СЛОВА (ОЧИСТКИ) -->
+              <button onclick="clearManualWord()" class="absolute right-2.5 top-2 text-slate-500 hover:text-red-400 transition" title="Удалить всё слово">
+                <i data-lucide="x-circle" class="w-4.5 h-4.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Строка (1-15)</label>
+            <input type="number" id="manualRow" min="1" max="15" value="8" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-100 text-center focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Столбец (А-П)</label>
+            <select id="manualCol" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <!-- Будет заполнено через JS -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Направление</label>
+            <select id="manualDir" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="H">Горизонт.</option>
+              <option value="V">Вертикал.</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Дополнительные параметры: разметка джокеров -->
+        <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Отметить какие буквы были джокерами:</span>
+          <div id="manualJokersContainer" class="flex flex-wrap gap-1.5 min-h-[30px] items-center justify-center">
+            <span class="text-xs text-slate-500 italic">Сначала введите слово выше</span>
+          </div>
+        </div>
+
+        <!-- КНОПКА "НА ДОСКУ" КАК В РАЗДЕЛЕ ПОДБОРА -->
+        <div class="flex gap-3 pt-2">
+          <button onclick="applyManualWordToBoard()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-950/50">
+            <i data-lucide="arrow-right-to-line" class="w-4 h-4"></i>
+            <span>на доску</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА 3: Содержимое мешка -->
+      <div id="tabContent-bag" class="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 shadow-xl tab-content hidden">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+          <div>
+            <h4 class="font-bold text-slate-200 text-sm">Остаток букв в мешке</h4>
+            <p class="text-[10px] text-slate-400">Авторасчет по формуле: Исходный набор - Доска - Рука</p>
+          </div>
+          <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-semibold" id="bagTotalDisplay">97 / 104</span>
+        </div>
+
+        <!-- Таблица мешка -->
+        <div id="bagGrid" class="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-[300px] overflow-y-auto pr-1">
+          <!-- Генерируется через JS -->
+        </div>
+      </div>
+
+      <!-- История ходов -->
+      <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">История игры</h4>
+          <button onclick="undoLastMove()" class="text-[10px] text-red-400 hover:text-red-300 font-semibold flex items-center space-x-1">
+            <i data-lucide="undo" class="w-3 h-3"></i>
+            <span>Отменить ход</span>
+          </button>
+        </div>
+        <div id="historyList" class="space-y-1.5 max-h-[160px] overflow-y-auto text-xs">
+          <!-- История -->
+          <div class="text-center text-slate-500 py-4 italic">Ходов еще не сделано</div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Интерактивная модалка редактирования клетки -->
+  <div id="cellEditModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full mx-4 shadow-2xl relative">
+      <button onclick="closeCellModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      
+      <h3 class="text-lg font-bold text-slate-200 mb-2 flex items-center">
+        <i data-lucide="edit-3" class="w-5 h-5 text-indigo-400 mr-2"></i>
+        <span>Редактировать клетку <span id="modalCellCoord" class="text-amber-400">A1</span></span>
+      </h3>
+      <p class="text-xs text-slate-400 mb-4" id="modalCellMultiplierInfo"></p>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5">Буква (кириллица, заглавная)</label>
+          <input type="text" id="modalLetterInput" maxlength="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-100 uppercase focus:outline-none focus:border-indigo-500 transition">
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <input type="checkbox" id="modalJokerCheckbox" class="w-4 h-4 rounded text-indigo-600 bg-slate-950 border-slate-800 focus:ring-indigo-500">
+          <label for="modalJokerCheckbox" class="text-xs text-slate-300 select-none">Это буква-джокер (дает 0 очков)</label>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <button onclick="saveCellFromModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition">Сохранить</button>
+          <button onclick="clearCellFromModal()" class="bg-red-950/50 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold py-2.5 rounded-xl transition">Стереть фишку</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно правил игры -->
+  <div id="rulesModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-2xl w-full mx-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+      <button onclick="toggleRulesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      
+      <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center border-b border-slate-800 pb-2">
+        <i data-lucide="book-open" class="w-5 h-5 text-amber-400 mr-2"></i>
+        <span>Правила игры Эрудит и Множители</span>
+      </h3>
+      
+      <div class="space-y-4 text-xs leading-relaxed text-slate-300">
+        <p class="font-semibold text-slate-200">Цветные клетки на поле дают дополнительные очки за выкладываемые слова:</p>
+        <ul class="space-y-2 pl-4 list-disc">
+          <li><span class="text-emerald-400 font-bold">x2 буква (зеленый)</span> — количество очков буквы умножается на <span class="underline">два</span>.</li>
+          <li><span class="text-sky-400 font-bold">x3 буква (голубой)</span> — количество очков буквы умножается на <span class="underline text-sky-400">три</span>.</li>
+          <li><span class="text-amber-400 font-bold">x2 слово (оранжевый)</span> — количество очков всего слова умножается на <span class="underline">два</span>.</li>
+          <li><span class="text-red-400 font-bold">x3 слово (красный)</span> — количество очков всего слова умножается на <span class="underline">три</span>.</li>
+        </ul>
+        <p>Если слово одновременно накрывает множители буквы и слова, то сначала рассчитывается итоговый вес каждой буквы (с учетом ее множителей), затем они складываются, и итоговая сумма умножается на множитель слова.</p>
+        <p class="bg-indigo-950/30 border border-indigo-900/50 p-2.5 rounded-lg"><span class="text-indigo-400 font-bold">Бонус за 7 букв:</span> Если за ход игрок использовал все семь букв со своей подставки, ему начисляются дополнительные <span class="text-indigo-300 font-bold">15 очков</span>.</p>
+        
+        <p class="font-semibold text-slate-200 mt-4">Фишки-звёздочки (джокеры):</p>
+        <p>В наборе присутствуют 4 звездочки. Каждая из них может играть роль любой буквы. Джокер при подсчете приносит 0 очков за саму букву, однако участвует в умножении очков слова.</p>
+
+        <p class="font-semibold text-slate-200 mt-4">Очки за буквы:</p>
+        <div class="grid grid-cols-3 gap-2 bg-slate-950 p-3 rounded-xl">
+          <div><strong class="text-amber-400">1 очко:</strong> А, И, Н, О</div>
+          <div><strong class="text-amber-400">2 очка:</strong> В, Г, Е, К, Л, М, П, Р, С, Т</div>
+          <div><strong class="text-amber-400">3 очка:</strong> Б, Д, У, Я</div>
+          <div><strong class="text-amber-400">5 очков:</strong> Ж, З, Й, Х, Ч, Ы, Ь</div>
+          <div><strong class="text-amber-400">8 очков:</strong> Ф, Ц, Ш, Щ, Ю</div>
+          <div><strong class="text-amber-400">10+ очков:</strong> Э (10), Ъ (15)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Футер -->
+  <footer class="border-t border-slate-800 py-4 px-6 text-center text-xs text-slate-500 bg-slate-950 mt-auto">
+    <span>Разработано в соответствии с регламентом Эрудит • 2026 г. • Темная тема Premium</span>
+  </footer>
+
+  <!-- Информационные всплывающие подсказки (Toast) -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 space-y-2 z-50"></div>
+
+  <!-- Скрипты приложения -->
+  <script>
+    // --- ПЕРЕМЕННЫЕ И НАСТРОЙКИ ---
+    const COL_LABELS = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К', 'Л', 'М', 'Н', 'О', 'П'];
+    
+    // Очки за буквы
+    const LETTER_POINTS = {
+      'А': 1, 'И': 1, 'Н': 1, 'О': 1,
+      'В': 2, 'Г': 2, 'Е': 2, 'К': 2, 'Л': 2, 'М': 2, 'П': 2, 'Р': 2, 'С': 2, 'Т': 2,
+      'Б': 3, 'Д': 3, 'У': 3, 'Я': 3,
+      'Ж': 5, 'З': 5, 'Й': 5, 'Х': 5, 'Ч': 5, 'Ы': 5, 'Ь': 5,
+      'Ф': 8, 'Ц': 8, 'Ш': 8, 'Щ': 8, 'Ю': 8,
+      'Э': 10, 'Ъ': 15, '*': 0
+    };
+
+    // Исходный мешок букв
+    const INITIAL_BAG = {
+      'А': 10, 'Б': 3, 'В': 5, 'Г': 3, 'Д': 5, 'Е': 9, 'Ж': 1, 'З': 2, 'И': 9, 'Й': 2,
+      'К': 6, 'Л': 5, 'М': 4, 'Н': 8, 'О': 10, 'П': 5, 'Р': 6, 'С': 6, 'Т': 6, 'У': 3,
+      'Ф': 1, 'Х': 1, 'Ц': 1, 'Ч': 2, 'Ш': 1, 'Щ': 1, 'Ъ': 1, 'Ы': 1, 'Ь': 2, 'Э': 1,
+      'Ю': 1, 'Я': 2, '*': 4
+    };
+
+    // Состояние игры
+    let gameState = {
+      board: Array(15).fill(null).map(() => Array(15).fill(null).map(() => ({
+        letter: '',
+        isJoker: false,
+        isNew: false
+      }))),
+      playerScore: 0,
+      opponentScore: 0,
+      rack: [],
+      history: [], // Лог совершенных ходов { player: 'player'|'opponent', word: 'СЛОВО', r: x, c: y, dir: 'H'|'V', score: S, jokers: [] }
+      activeTab: 'suggestions'
+    };
+
+    // Словарь
+    const DICTIONARY = new Set();
+    
+    // Встроенный базовый словарь (около 500 высокочастотных слов для мгновенной работы)
+    const BUILTIN_WORDS = [
+      "АРБУЗ", "АДРЕС", "АКТЕР", "АНГЕЛ", "БАГАЖ", "БАНКА", "БАРАН", "БИЛЕТ", "БОКАЛ", "БОЧКА", "БУМАГА", 
+      "ВАГОН", "ВЕТЕР", "ВИШНЯ", "ВОКЗАЛ", "ВОЛОС", "ВОРОНА", "ВРЕМЯ", "ГАЗЕТА", "ГАРАЖ", "ГВОЗДЬ", "ГИТАРА", 
+      "ГЛАЗ", "ГЛИНА", "ГНЕЗДО", "ГОРОД", "ГРИБ", "ГРОЗА", "ГРУША", "ДВЕРЬ", "ДВОР", "ДЕРЕВО", "ДОЖДЬ", "ДОМ", 
+      "ДОРОГА", "ДОЧЬ", "ДРУГ", "ДЫМ", "ДЫНЯ", "ЕЖ", "ЕЛЬ", "ЖАБА", "ЖЕЛЕЗО", "ЖИЗНЬ", "ЖИРАФ", "ЗАБОР", 
+      "ЗАВОД", "ЗАМОК", "ЗВЕЗДА", "ЗВЕРЬ", "ЗВОНОК", "ЗЕМЛЯ", "ЗИМА", "ЗОНТ", "ЗУБ", "ИГРА", "ИГОЛКА", 
+      "ИЗБА", "ИМЯ", "КАБИНЕТ", "КАКТУС", "КАМЕНЬ", "КАРТА", "КАРТИНА", "КАША", "КНИГА", "КОЛЕСО", "КОЛЬЦО", 
+      "КОНФЕТА", "КОРАБЛЬ", "КОРОНА", "КОТ", "КОФЕ", "КОШКА", "КРАН", "КРОВАТЬ", "КРУЖКА", "КРЫША", "КУРИЦА", 
+      "ЛАМПА", "ЛЕВ", "ЛЕС", "ЛИМОН", "ЛИНЕЙКА", "ЛИСТ", "ЛОДКА", "ЛОЖКА", "ЛОШАДЬ", "ЛУК", "ЛУНА", "ЛЫЖИ", 
+      "МАГАЗИН", "МАЛИНА", "МАМА", "МАРКА", "МАШИНА", "МЕДВЕДЬ", "МЕД", "МЕТРО", "МЕЧ", "МИСКА", "МОЛОКО", 
+      "МОРЕ", "МОСТ", "МУХА", "МЫЛО", "МЫШЬ", "МЯЧ", "НЕБО", "НИТКА", "НОЖ", "НОРА", "НОСОК", "НОЧЬ", 
+      "ОБЛАКО", "ОБЕЗЬЯНА", "ОКНО", "ОГУРЕЦ", "ОЗЕРО", "ОЛЕНЬ", "ОРЕЛ", "ОСА", "ОСТРОВ", "ОЧКИ", "ПАЛЬТО", 
+      "ПАПА", "ПАРК", "ПАРУС", "ПАУК", "ПЕНАЛ", "ПЕСОК", "ПЕТУХ", "ПИСЬМО", "ПИРОГ", "ПЛАТЬЕ", "ПЛИТА", 
+      "ПОЕЗД", "ПОЛЕ", "ПОМИДОР", "ПОСУДА", "ПОЧТА", "ПТИЦА", "ПУСТЫНЯ", "ПЧЕЛА", "РАБОТА", "РАДУГА", "РАК", 
+      "РАМА", "РЕКА", "РЕПКА", "РИС", "РОЗА", "РОТ", "РУКА", "РУЧКА", "РЫБА", "РЫСЬ", "САД", "САМОЛЕТ", 
+      "САХАР", "СВЕЧА", "СЕВЕР", "СЕМЬЯ", "СЕРДЦЕ", "СЕТКА", "СИЛА", "СЛИВА", "СЛОН", "СНЕГ", "СОБАКА", 
+      "СОК", "СОЛНЦЕ", "СОЛЬ", "СОМ", "СОСНА", "СТЕНА", "СТОЛ", "СТУЛ", "СУМКА", "СУП", "СЫР", "ТАРЕЛКА", 
+      "ТЕАТР", "ТЕЛЕФОН", "ТЕТРАДЬ", "ТИГР", "ТРАВА", "ТРАКТОР", "ТУЧА", "ТЫКВА", "УТКА", "УТЮГ", "УХО", 
+      "УЧЕНИК", "УЧИТЕЛЬ", "ФАКЕЛ", "ФЛАГ", "ФОНАРЬ", "ФОТОГРАФИЯ", "ХЛЕБ", "ХОЛОД", "ЦВЕТОК", "ЦАРЬ", "ЧАЙ", 
+      "ЧАЙНИК", "ЧАСЫ", "ЧАШКА", "ЧЕЛОВЕК", "ЧЕМОДАН", "ЧЕРЕПАХА", "ЧИСЛО", "ШКАФ", "ШКОЛА", "ШЛЯПА", 
+      "ШОКОЛАД", "ЩЕТКА", "ЩУКА", "ЭКРАН", "ЮБКА", "ЮГ", "ЯБЛОКО", "ЯГОДА", "ЯЗЫК", "ЯКОРЬ", "ЯЩИК",
+      // Примеры расширенных слов для тестирования рисков продолжений
+      "СЛОНИК", "ЗАСЛОН", "ЗАСЛОНКА", "СЛОНИХА", "СЛОНЫ", "СЛОНЕНОК", "ЗАВТРАК", "ОБЕД", "УЖИН", "ПОЛДНИК"
+    ];
+
+    // Аудио Синтезатор Web Audio API для ретро звуковых эффектов
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'success') {
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'coin') {
+          osc.frequency.setValueAtTime(987.77, now); // B5
+          osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'tap') {
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.04);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.04);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else if (type === 'clear') {
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(90, now + 0.18);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.18);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        }
+      } catch (e) {
+        // Игнорируем блокировки автоплея браузером
+      }
+    }
+
+    // --- STREAMING_CHUNK: Setting Up Board Multipliers... ---
+    // --- ЛОГИКА ОПРЕДЕЛЕНИЯ КЛЕТОК НА ДОСКЕ (С СЕМЕТРИЕЙ СКРИНШОТА) ---
+    function getCellMultiplier(r, c) {
+      if (r === 7 && c === 7) {
+        return { type: 'center', label: '★', val: 1, color: '#475569', textClass: 'text-slate-200' };
+      }
+      
+      // Красные клетки (х3 слово)
+      const redCells = [
+        [0,0], [0,7], [0,14],
+        [7,0],         [7,14],
+        [14,0], [14,7], [14,14]
+      ];
+      if (redCells.some(([y, x]) => y === r && x === c)) {
+        return { type: 'x3_word', label: 'x3 сло.', val: 3, color: '#ef4444', textClass: 'text-red-400 font-extrabold' };
+      }
+      
+      // Оранжевые клетки (х2 слово)
+      const orangeCells = [
+        [1,5], [1,9],
+        [5,1], [5,13],
+        [9,1], [9,13],
+        [13,5], [13,9]
+      ];
+      if (orangeCells.some(([y, x]) => y === r && x === c)) {
+        return { type: 'x2_word', label: 'x2 сло.', val: 2, color: '#f97316', textClass: 'text-orange-400 font-extrabold' };
+      }
+      
+      // Голубые клетки (х3 буква)
+      const blueCells = [
+        [1,1], [2,2], [3,3], [4,4],
+        [10,10], [11,11], [12,12], [13,13],
+        [1,13], [2,12], [3,11], [4,10],
+        [10,4], [11,3], [12,2], [13,1]
+      ];
+      if (blueCells.some(([y, x]) => y === r && x === c)) {
+        return { type: 'x3_letter', label: 'x3 бук.', val: 3, color: '#38bdf8', textClass: 'text-sky-400 font-extrabold' };
+      }
+      
+      // Зеленые клетки (х2 буква)
+      const greenCells = [
+        [0,3], [0,11],
+        [2,6], [2,8],
+        [3,0], [3,7], [3,14],
+        [6,2], [6,6], [6,8], [6,12],
+        [7,3], [7,11],
+        [8,2], [8,6], [8,8], [8,12],
+        [11,0], [11,7], [11,14],
+        [12,6], [12,8],
+        [14,3], [14,11]
+      ];
+      if (greenCells.some(([y, x]) => y === r && x === c)) {
+        return { type: 'x2_letter', label: 'x2 бук.', val: 2, color: '#22c55e', textClass: 'text-emerald-400 font-extrabold' };
+      }
+      
+      return { type: 'normal', label: '', val: 1, color: '#1e293b', textClass: 'text-slate-500' };
+    }
+
+    // --- STREAMING_CHUNK: Rendering the Game Board... ---
+    // --- ИНИЦИАЛИЗАЦИЯ И ОТРИСОВКА ---
+    window.onload = async function() {
+      // Инициализируем иконки Lucide
+      lucide.createIcons();
+      
+      // Заполняем дефолтный словарь
+      BUILTIN_WORDS.forEach(word => DICTIONARY.add(word));
+      updateDictStatusText(`Встроенный словарь (${DICTIONARY.size} сущ.)`);
+
+      // Заполняем выбор столбцов для ручной записи
+      const manualColSelect = document.getElementById('manualCol');
+      manualColSelect.innerHTML = '';
+      COL_LABELS.forEach((label, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = label;
+        if (idx === 7) opt.selected = true;
+        manualColSelect.appendChild(opt);
+      });
+
+      // Рендерим доску
+      renderBoard();
+      // Рендерим мешок
+      renderBag();
+      
+      // Пытаемся автоматически загрузить внешние файлы словаря
+      await tryFetchExternalDictionaries();
+
+      // Ограничим ввод только русскими буквами в ручном вводе
+      const manualWordInput = document.getElementById('manualWord');
+      manualWordInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase().replace(/[^А-ЯЁ]/g, '');
+        generateManualJokersCheckboxes(this.value);
+      });
+    };
+
+    // Попытка асинхронной загрузки файлов
+    async function tryFetchExternalDictionaries() {
+      const filesToTry = ['nouns.txt', 'dictionary.txt'];
+      for (const fileName of filesToTry) {
+        try {
+          const response = await fetch(fileName);
+          if (response.ok) {
+            const text = await response.text();
+            const words = text.split(/[\r\n\s,]+/)
+                              .map(w => w.trim().toUpperCase().replace('Ё', 'Е'))
+                              .filter(w => w.length >= 2 && /^[А-Я]+$/.test(w));
+            if (words.length > 0) {
+              words.forEach(word => DICTIONARY.add(word));
+              updateDictStatusText(`Загружен словарь: ${fileName} (${DICTIONARY.size} слов)`);
+              showToast(`Успешно подгружено ${words.length} слов из ${fileName}`, 'success');
+              break;
+            }
+          }
+        } catch (e) {
+          // Игнорируем ошибку недоступности файла
+        }
+      }
+    }
+
+    function updateDictStatusText(text) {
+      document.getElementById('dictionaryStatus').textContent = text;
+    }
+
+    // Рендер виртуальной доски 15х15
+    function renderBoard() {
+      const container = document.getElementById('boardContainer');
+      container.innerHTML = '';
+
+      for (let r = 0; r < 15; r++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'board-grid-row';
+
+        // Метка строки (1-15) слева
+        const rowLabel = document.createElement('div');
+        rowLabel.className = 'w-6 text-right pr-2 text-[10px] font-extrabold text-slate-500';
+        rowLabel.textContent = r + 1;
+        rowDiv.appendChild(rowLabel);
+
+        for (let c = 0; c < 15; c++) {
+          const cellData = gameState.board[r][c];
+          const mult = getCellMultiplier(r, c);
+          
+          const cellBtn = document.createElement('button');
+          cellBtn.className = 'board-cell-btn';
+          
+          // Цветовая разметка клетки
+          if (mult.type === 'center') {
+            cellBtn.className += ' bg-slate-800 border border-slate-700 hover:bg-slate-700';
+          } else if (mult.type === 'x3_word') {
+            cellBtn.className += ' bg-red-950/40 border border-red-800 hover:bg-red-900/60';
+          } else if (mult.type === 'x2_word') {
+            cellBtn.className += ' bg-orange-950/40 border border-orange-800 hover:bg-orange-900/60';
+          } else if (mult.type === 'x3_letter') {
+            cellBtn.className += ' bg-sky-950/40 border border-sky-800 hover:bg-sky-900/60';
+          } else if (mult.type === 'x2_letter') {
+            cellBtn.className += ' bg-emerald-950/40 border border-emerald-800 hover:bg-emerald-900/60';
+          } else {
+            cellBtn.className += ' bg-slate-900/50 border border-slate-800/60 hover:bg-slate-800/40';
+          }
+
+          // Наличие буквы
+          if (cellData.letter) {
+            cellBtn.className += ' z-10';
+            
+            // Фишка (с полупрозрачной текстурой дерева, чтобы цвет клетки сиял сзади)
+            const tileDiv = document.createElement('div');
+            tileDiv.className = 'absolute inset-[2px] rounded-lg wood-tile flex flex-col items-center justify-center border-2';
+            
+            // Зададим кант фишки по цвету множителя для визуальной глубины
+            if (mult.type === 'x3_word') tileDiv.className += ' border-red-500/80 glow-red';
+            else if (mult.type === 'x2_word') tileDiv.className += ' border-orange-500/80 glow-orange';
+            else if (mult.type === 'x3_letter') tileDiv.className += ' border-sky-500/80 glow-blue';
+            else if (mult.type === 'x2_letter') tileDiv.className += ' border-emerald-500/80 glow-green';
+            else tileDiv.className += ' border-amber-600/50';
+
+            // Основной символ буквы
+            const letterSpan = document.createElement('span');
+            letterSpan.className = `text-lg lg:text-xl font-black ${cellData.isJoker ? 'text-amber-400 font-serif italic' : 'text-slate-100'}`;
+            letterSpan.textContent = cellData.letter;
+
+            // Вес буквы в углу фишки
+            const weightSpan = document.createElement('span');
+            weightSpan.className = 'absolute bottom-1 right-1 text-[8px] font-bold text-slate-400';
+            weightSpan.textContent = cellData.isJoker ? '0' : LETTER_POINTS[cellData.letter] || '1';
+
+            // МЕТКА ДЛЯ ВЫПОЛНЕНИЯ ТРЕБОВАНИЯ №4 (Множитель остается видимым)
+            if (mult.type !== 'normal') {
+              const indicator = document.createElement('span');
+              indicator.className = 'absolute top-0.5 left-1 text-[7px] tracking-tighter uppercase font-bold text-slate-400 opacity-85';
+              indicator.textContent = mult.type === 'x3_word' ? 'x3с' : mult.type === 'x2_word' ? 'x2с' : mult.type === 'x3_letter' ? 'x3б' : 'x2б';
+              tileDiv.appendChild(indicator);
+            }
+
+            tileDiv.appendChild(letterSpan);
+            tileDiv.appendChild(weightSpan);
+            cellBtn.appendChild(tileDiv);
+          } else {
+            // Если пусто — выводим сокращенную метку множителя
+            if (mult.type !== 'normal') {
+              const label = document.createElement('span');
+              label.className = `text-[8px] font-semibold select-none uppercase tracking-tighter ${mult.textClass}`;
+              label.textContent = mult.label;
+              cellBtn.appendChild(label);
+            }
+          }
+
+          cellBtn.onclick = () => openCellEditModal(r, c);
+          rowDiv.appendChild(cellBtn);
+        }
+        container.appendChild(rowDiv);
+      }
+    }
+
+    // --- STREAMING_CHUNK: Managing Cell Modals... ---
+    // --- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ КЛЕТКИ ---
+    let activeEditR = null;
+    let activeEditC = null;
+
+    function openCellEditModal(r, c) {
+      playSound('tap');
+      activeEditR = r;
+      activeEditC = c;
+      const cellData = gameState.board[r][c];
+      const mult = getCellMultiplier(r, c);
+
+      document.getElementById('modalCellCoord').textContent = `${COL_LABELS[c]}${r + 1}`;
+      
+      let multDesc = 'Обычная клетка';
+      if (mult.type === 'x3_word') multDesc = 'Тройной множитель слова (x3 Слово)';
+      else if (mult.type === 'x2_word') multDesc = 'Двойной множитель слова (x2 Слово)';
+      else if (mult.type === 'x3_letter') multDesc = 'Тройной множитель буквы (x3 Буква)';
+      else if (mult.type === 'x2_letter') multDesc = 'Двойной множитель буквы (x2 Буква)';
+      else if (mult.type === 'center') multDesc = 'Стартовая клетка (Звезда)';
+      
+      document.getElementById('modalCellMultiplierInfo').textContent = multDesc;
+
+      const letterInput = document.getElementById('modalLetterInput');
+      letterInput.value = cellData.letter;
+      
+      const jokerCheckbox = document.getElementById('modalJokerCheckbox');
+      jokerCheckbox.checked = cellData.isJoker;
+
+      document.getElementById('cellEditModal').classList.remove('hidden');
+      letterInput.focus();
+    }
+
+    function closeCellModal() {
+      document.getElementById('cellEditModal').classList.add('hidden');
+    }
+
+    function saveCellFromModal() {
+      if (activeEditR === null || activeEditC === null) return;
+      const rawLetter = document.getElementById('modalLetterInput').value.trim().toUpperCase();
+      const isJoker = document.getElementById('modalJokerCheckbox').checked;
+
+      if (!rawLetter) {
+        clearCellFromModal();
+        return;
+      }
+
+      if (!/^[А-ЯЁ]$/.test(rawLetter)) {
+        showToast('Введите корректную кириллическую букву', 'error');
+        return;
+      }
+
+      gameState.board[activeEditR][activeEditC] = {
+        letter: rawLetter,
+        isJoker: isJoker,
+        isNew: false
+      };
+
+      playSound('success');
+      closeCellModal();
+      renderBoard();
+      renderBag();
+      autoCalculateIfPossible();
+    }
+
+    function clearCellFromModal() {
+      if (activeEditR === null || activeEditC === null) return;
+      gameState.board[activeEditR][activeEditC] = {
+        letter: '',
+        isJoker: false,
+        isNew: false
+      };
+      playSound('clear');
+      closeCellModal();
+      renderBoard();
+      renderBag();
+      autoCalculateIfPossible();
+    }
+
+    // --- STREAMING_CHUNK: Formatting Rack Inputs... ---
+    // --- РАБОТА С ПОДСТАВКОЙ (РУКОЙ) ИГРОКА ---
+    function formatRackInput(input) {
+      input.value = input.value.toUpperCase().replace(/[^А-ЯЁ*]/g, '');
+      const val = input.value;
+      gameState.rack = val.split('');
+      
+      document.getElementById('rackCount').textContent = `${gameState.rack.length} / 7 букв`;
+      renderRackTiles();
+      renderBag(); // обновляем мешок, так как рука изменилась
+    }
+
+    function clearRack() {
+      playSound('clear');
+      document.getElementById('rackInput').value = '';
+      gameState.rack = [];
+      document.getElementById('rackCount').textContent = `0 / 7 букв`;
+      renderRackTiles();
+      renderBag();
+    }
+
+    function renderRackTiles() {
+      const container = document.getElementById('rackTilesDisplay');
+      container.innerHTML = '';
+      
+      if (gameState.rack.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-600 italic py-2">Подставка пуста</span>';
+        return;
+      }
+
+      gameState.rack.forEach(letter => {
+        const tile = document.createElement('div');
+        tile.className = 'w-9 h-9 rounded-lg wood-tile border border-amber-600/50 flex flex-col items-center justify-center relative shadow-md';
+        
+        const letterSpan = document.createElement('span');
+        letterSpan.className = `text-sm font-black ${letter === '*' ? 'text-amber-400 font-serif italic' : 'text-slate-100'}`;
+        letterSpan.textContent = letter === '*' ? '★' : letter;
+        
+        const pointsSpan = document.createElement('span');
+        pointsSpan.className = 'absolute bottom-0.5 right-1 text-[7px] text-slate-400 font-bold';
+        pointsSpan.textContent = letter === '*' ? '0' : LETTER_POINTS[letter] || '1';
+
+        tile.appendChild(letterSpan);
+        tile.appendChild(pointsSpan);
+        container.appendChild(tile);
+      });
+    }
+
+    // --- STREAMING_CHUNK: Calculating Bag Distribution... ---
+    // --- АВТОМАТИЧЕСКИЙ РАСЧЕТ ОСТАТКА В МЕШКЕ ---
+    function calculateRemainingBag() {
+      // Клонируем дефолтный мешок
+      const currentBag = { ...INITIAL_BAG };
+
+      // Вычитаем всё, что уже на доске
+      for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+          const tile = gameState.board[r][c];
+          if (tile.letter) {
+            const letterKey = tile.isJoker ? '*' : tile.letter;
+            if (currentBag[letterKey] && currentBag[letterKey] > 0) {
+              currentBag[letterKey]--;
+            }
+          }
+        }
+      }
+
+      // Вычитаем то, что на руках у игрока
+      gameState.rack.forEach(letter => {
+        if (currentBag[letter] && currentBag[letter] > 0) {
+          currentBag[letter]--;
+        }
+      });
+
+      return currentBag;
+    }
+
+    function renderBag() {
+      const bag = calculateRemainingBag();
+      const container = document.getElementById('bagGrid');
+      container.innerHTML = '';
+
+      let totalLetters = 0;
+
+      Object.keys(bag).forEach(letter => {
+        const count = bag[letter];
+        totalLetters += count;
+
+        const cell = document.createElement('div');
+        cell.className = `p-2 rounded-xl flex flex-col items-center justify-center border text-center transition ${
+          count === 0 ? 'bg-slate-950/40 border-slate-900 text-slate-600' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+        }`;
+
+        const letterLabel = document.createElement('span');
+        letterLabel.className = `text-xs font-black ${letter === '*' ? 'text-amber-400 font-serif' : 'text-slate-200'}`;
+        letterLabel.textContent = letter === '*' ? '★ (Дж)' : letter;
+
+        const countLabel = document.createElement('span');
+        countLabel.className = `text-[10px] font-bold ${count === 0 ? 'text-slate-600' : count <= 1 ? 'text-red-400 font-extrabold animate-pulse' : 'text-indigo-400'}`;
+        countLabel.textContent = `${count} шт.`;
+
+        cell.appendChild(letterLabel);
+        cell.appendChild(countLabel);
+        container.appendChild(cell);
+      });
+
+      document.getElementById('bagTotalDisplay').textContent = `${totalLetters} / 104 шт.`;
+    }
+
+    // --- STREAMING_CHUNK: Setting Up Manual Play Actions... ---
+    // --- РУЧНАЯ ЗАПИСЬ ХОДА ---
+    function clearManualWord() {
+      playSound('clear');
+      document.getElementById('manualWord').value = '';
+      document.getElementById('manualJokersContainer').innerHTML = '<span class="text-xs text-slate-500 italic">Сначала введите слово выше</span>';
+    }
+
+    function generateManualJokersCheckboxes(word) {
+      const container = document.getElementById('manualJokersContainer');
+      container.innerHTML = '';
+
+      if (!word) {
+        container.innerHTML = '<span class="text-xs text-slate-500 italic">Сначала введите слово выше</span>';
+        return;
+      }
+
+      word.split('').forEach((letter, idx) => {
+        const wrap = document.createElement('label');
+        wrap.className = 'flex items-center space-x-1 bg-slate-900 border border-slate-800 px-2 py-1 rounded-md cursor-pointer hover:border-slate-700';
+        
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.dataset.index = idx;
+        chk.className = 'w-3 h-3 rounded text-indigo-600 bg-slate-950 border-slate-800 focus:ring-0';
+        
+        const txt = document.createElement('span');
+        txt.className = 'text-[10px] font-bold text-slate-300';
+        txt.textContent = `${letter} (№${idx+1})`;
+
+        wrap.appendChild(chk);
+        wrap.appendChild(txt);
+        container.appendChild(wrap);
+      });
+    }
+
+    function applyManualWordToBoard() {
+      const player = document.getElementById('manualPlayer').value;
+      const word = document.getElementById('manualWord').value.toUpperCase().trim();
+      const r = parseInt(document.getElementById('manualRow').value) - 1;
+      const c = parseInt(document.getElementById('manualCol').value);
+      const dir = document.getElementById('manualDir').value;
+
+      if (!word || word.length < 2) {
+        showToast('Введите слово длиной от 2-х букв', 'error');
+        return;
+      }
+
+      // Считываем какие буквы помечены джокерами
+      const jokerCheckboxes = document.querySelectorAll('#manualJokersContainer input[type="checkbox"]');
+      const jokers = [];
+      jokerCheckboxes.forEach(chk => {
+        if (chk.checked) jokers.push(parseInt(chk.dataset.index));
+      });
+
+      // Валидация возможности размещения на доске по границам
+      if (dir === 'H' && c + word.length > 15) {
+        showToast('Слово выходит за правый край доски!', 'error');
+        return;
+      }
+      if (dir === 'V' && r + word.length > 15) {
+        showToast('Слово выходит за нижний край доски!', 'error');
+        return;
+      }
+
+      // Размещаем на доске
+      const wordTilesToPlace = [];
+      for (let i = 0; i < word.length; i++) {
+        const currR = dir === 'H' ? r : r + i;
+        const currC = dir === 'H' ? c + i : c;
+        const letter = word[i];
+        const isJoker = jokers.includes(i);
+
+        wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker });
+      }
+
+      // Проверим на конфликты с существующими буквами
+      for (const tile of wordTilesToPlace) {
+        const boardTile = gameState.board[tile.r][tile.c];
+        if (boardTile.letter && boardTile.letter !== tile.letter) {
+          showToast(`Конфликт букв в клетке ${COL_LABELS[tile.c]}${tile.r+1}: на доске '${boardTile.letter}', вы ставите '${tile.letter}'`, 'error');
+          return;
+        }
+      }
+
+      // Рассчитываем очки для записываемого слова
+      const score = calculateSpecificMoveScore(wordTilesToPlace);
+
+      // Применяем изменения
+      wordTilesToPlace.forEach(tile => {
+        gameState.board[tile.r][tile.c] = {
+          letter: tile.letter,
+          isJoker: tile.isJoker,
+          isNew: false
+        };
+      });
+
+      // Обновляем счет игроков
+      if (player === 'player') {
+        gameState.playerScore += score;
+      } else {
+        gameState.opponentScore += score;
+      }
+
+      // Добавляем в историю
+      gameState.history.push({
+        player,
+        word,
+        r,
+        c,
+        dir,
+        score,
+        jokers
+      });
+
+      playSound('success');
+      showToast(`Слово «${word}» успешно добавлено на доску! Начислено: +${score} очков.`, 'success');
+      
+      // Очистка формы
+      clearManualWord();
+      updateScoreboardDisplay();
+      renderBoard();
+      renderBag();
+      updateHistoryDisplay();
+      autoCalculateIfPossible();
+    }
+
+    function calculateSpecificMoveScore(tilesToPlace) {
+      let total = 0;
+      let wordMult = 1;
+
+      // Считаем сколько букв мы выставили "впервые" за этот ход (чтобы применить их множители)
+      let newlyPlacedCount = 0;
+
+      tilesToPlace.forEach(tile => {
+        const boardTile = gameState.board[tile.r][tile.c];
+        const baseVal = tile.isJoker ? 0 : LETTER_POINTS[tile.letter] || 1;
+        const mult = getCellMultiplier(tile.r, tile.c);
+
+        if (!boardTile.letter) {
+          // Клетка была пуста, множители работают!
+          newlyPlacedCount++;
+          if (mult.type === 'x2_letter') {
+            total += baseVal * 2;
+          } else if (mult.type === 'x3_letter') {
+            total += baseVal * 3;
+          } else {
+            total += baseVal;
+          }
+
+          if (mult.type === 'x2_word') {
+            wordMult *= 2;
+          } else if (mult.type === 'x3_word') {
+            wordMult *= 3;
+          }
+        } else {
+          // Буква уже была на доске, множители не работают
+          total += baseVal;
+        }
+      });
+
+      total *= wordMult;
+
+      // Бонус за использование всех 7 букв с подставки
+      if (newlyPlacedCount === 7) {
+        total += 15;
+      }
+
+      return total;
+    }
+
+    function updateScoreboardDisplay() {
+      document.getElementById('playerScoreDisplay').textContent = gameState.playerScore;
+      document.getElementById('opponentScoreDisplay').textContent = gameState.opponentScore;
+    }
+
+    function updateHistoryDisplay() {
+      const container = document.getElementById('historyList');
+      container.innerHTML = '';
+
+      if (gameState.history.length === 0) {
+        container.innerHTML = '<div class="text-center text-slate-500 py-4 italic">Ходов еще не сделано</div>';
+        return;
+      }
+
+      // Отрисовываем в обратном порядке (последние ходы сверху)
+      [...gameState.history].reverse().forEach((item, idx) => {
+        const mainIdx = gameState.history.length - 1 - idx;
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800/80';
+
+        const left = document.createElement('div');
+        left.className = 'flex items-center space-x-2';
+        
+        const badge = document.createElement('span');
+        badge.className = `w-1.5 h-1.5 rounded-full ${item.player === 'player' ? 'bg-indigo-400' : 'bg-rose-400'}`;
+        
+        const whoText = document.createElement('span');
+        whoText.className = 'font-bold text-slate-300';
+        whoText.textContent = item.player === 'player' ? 'Вы' : 'Соп.';
+
+        const wordText = document.createElement('span');
+        wordText.className = 'font-mono-custom font-extrabold text-amber-400';
+        wordText.textContent = `«${item.word}»`;
+
+        const coords = document.createElement('span');
+        coords.className = 'text-[10px] text-slate-500';
+        coords.textContent = `${COL_LABELS[item.c]}${item.r + 1} (${item.dir === 'H' ? 'гор.' : 'верт.'})`;
+
+        left.appendChild(badge);
+        left.appendChild(whoText);
+        left.appendChild(wordText);
+        left.appendChild(coords);
+
+        const scoreBadge = document.createElement('span');
+        scoreBadge.className = 'text-xs font-black bg-slate-950 px-2 py-0.5 rounded-lg text-slate-300';
+        scoreBadge.textContent = `+${item.score}`;
+
+        div.appendChild(left);
+        div.appendChild(scoreBadge);
+        container.appendChild(div);
+      });
+    }
+
+    function undoLastMove() {
+      if (gameState.history.length === 0) {
+        showToast('История ходов пуста!', 'error');
+        return;
+      }
+
+      const lastMove = gameState.history.pop();
+      
+      // Очищаем доску полностью
+      for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+          gameState.board[r][c] = { letter: '', isJoker: false, isNew: false };
+        }
+      }
+
+      // Сбрасываем очки
+      gameState.playerScore = 0;
+      gameState.opponentScore = 0;
+
+      // Переприменяем все ходы из истории
+      gameState.history.forEach(item => {
+        const wordTilesToPlace = [];
+        for (let i = 0; i < item.word.length; i++) {
+          const currR = item.dir === 'H' ? item.r : item.r + i;
+          const currC = item.dir === 'H' ? item.c + i : item.c;
+          const letter = item.word[i];
+          const isJoker = item.jokers.includes(i);
+          wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker });
+        }
+
+        const score = calculateSpecificMoveScore(wordTilesToPlace);
+        wordTilesToPlace.forEach(tile => {
+          gameState.board[tile.r][tile.c] = {
+            letter: tile.letter,
+            isJoker: tile.isJoker,
+            isNew: false
+          };
+        });
+
+        if (item.player === 'player') {
+          gameState.playerScore += score;
+        } else {
+          gameState.opponentScore += score;
+        }
+      });
+
+      playSound('clear');
+      showToast(`Ход «${lastMove.word}» успешно отменен!`, 'success');
+      updateScoreboardDisplay();
+      renderBoard();
+      renderBag();
+      updateHistoryDisplay();
+      autoCalculateIfPossible();
+    }
+
+    function resetGame() {
+      if (confirm('Вы действительно хотите полностью перезапустить текущую партию? Все набранные очки и история игры будут утеряны.')) {
+        gameState = {
+          board: Array(15).fill(null).map(() => Array(15).fill(null).map(() => ({
+            letter: '',
+            isJoker: false,
+            isNew: false
+          }))),
+          playerScore: 0,
+          opponentScore: 0,
+          rack: [],
+          history: [],
+          activeTab: 'suggestions'
+        };
+        document.getElementById('rackInput').value = '';
+        document.getElementById('manualWord').value = '';
+        
+        playSound('clear');
+        showToast('Партия успешно сброшена!', 'success');
+        updateScoreboardDisplay();
+        renderBoard();
+        renderBag();
+        updateHistoryDisplay();
+        document.getElementById('suggestionsList').innerHTML = `
+          <div class="text-center py-12 text-slate-500">
+            <i data-lucide="search-code" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i>
+            <p class="text-xs">Введите буквы на подставку и нажмите «Рассчитать ходы» для поиска наилучших вариантов размещения.</p>
+          </div>
+        `;
+        document.getElementById('suggestionsCount').textContent = 'Найдено: 0';
+      }
+    }
+
+    // --- АВТОМАТИЧЕСКИЙ ЗАПУСК ПОИСКА ПРИ ИЗМЕНЕНИИ ДОСКИ ---
+    function autoCalculateIfPossible() {
+      if (gameState.rack.length > 0) {
+        calculateSuggestions();
+      }
+    }
+
+    // --- STREAMING_CHUNK: Designing Strict Crossword Verification Engine... ---
+    // Вспомогательные функции для поиска непрерывного ряда букв по осям (Кроссворд-чекер)
+    function getVerticalWordAt(r, c, placedLetter) {
+      let word = placedLetter;
+      let topR = r - 1;
+      while (topR >= 0 && gameState.board[topR][c].letter !== '') {
+        word = gameState.board[topR][c].letter + word;
+        topR--;
+      }
+      let botR = r + 1;
+      while (botR < 15 && gameState.board[botR][c].letter !== '') {
+        word = word + gameState.board[botR][c].letter;
+        botR++;
+      }
+      return word.length > 1 ? word : "";
+    }
+
+    function getHorizontalWordAt(r, c, placedLetter) {
+      let word = placedLetter;
+      let leftC = c - 1;
+      while (leftC >= 0 && gameState.board[r][leftC].letter !== '') {
+        word = gameState.board[r][leftC].letter + word;
+        leftC--;
+      }
+      let rightC = c + 1;
+      while (rightC < 15 && gameState.board[r][rightC].letter !== '') {
+        word = word + gameState.board[r][rightC].letter;
+        rightC++;
+      }
+      return word.length > 1 ? word : "";
+    }
+
+    // --- STREAMING_CHUNK: Implementing Board Search & Validation Algorithm... ---
+    // Проверка возможности составления слова из имеющихся фишек
+    function canFormWord(word, boardLettersNeed, availableRack) {
+      const rackCopy = [...availableRack];
+      const result = { possible: true, jokersUsed: 0, jokersRequired: [], lettersUsed: [] };
+
+      for (let i = 0; i < word.length; i++) {
+        const needLetter = word[i];
+        
+        // Если на доске уже стоит буква в этой позиции, она должна совпадать
+        if (boardLettersNeed[i]) {
+          if (boardLettersNeed[i] !== needLetter) {
+            result.possible = false;
+            return result;
+          }
+          continue; // Берем готовую с доски, руку не тратим
+        }
+
+        // Пытаемся взять обычную букву с руки
+        const rackIdx = rackCopy.indexOf(needLetter);
+        if (rackIdx !== -1) {
+          rackCopy.splice(rackIdx, 1);
+          result.lettersUsed.push(needLetter);
+        } else {
+          // Пробуем использовать джокер со своей руки
+          const jokerIdx = rackCopy.indexOf('*');
+          if (jokerIdx !== -1) {
+            rackCopy.splice(jokerIdx, 1);
+            result.jokersUsed++;
+            result.lettersUsed.push(needLetter);
+          } else {
+            // Если и джокера нет на руках, это кандидат для покупки джокера
+            result.jokersRequired.push({ letter: needLetter, pos: i });
+          }
+        }
+      }
+
+      return result;
+    }
+
+    // Поиск вариантов достройки слова соперником (анализ угроз)
+    function analyzeExtensionRisks(word, r, c, dir) {
+      const risks = [];
+      
+      // Ищем в словаре слова, которые содержат наше слово как строгое подмножество
+      DICTIONARY.forEach(dictWord => {
+        if (dictWord === word || dictWord.length <= word.length) return;
+        
+        const idx = dictWord.indexOf(word);
+        if (idx !== -1) {
+          // Наше слово может быть достроено спереди или сзади
+          const prefix = dictWord.slice(0, idx);
+          const suffix = dictWord.slice(idx + word.length);
+          
+          let isPhysicallyPossible = true;
+
+          // Проверяем физическое свободное место на доске для префикса
+          if (prefix.length > 0) {
+            for (let i = 1; i <= prefix.length; i++) {
+              const testR = dir === 'H' ? r : r - i;
+              const testC = dir === 'H' ? c - i : c;
+              if (testR < 0 || testR >= 15 || testC < 0 || testC >= 15) {
+                isPhysicallyPossible = false;
+                break;
+              }
+              if (gameState.board[testR][testC].letter) {
+                isPhysicallyPossible = false; // Клетка занята другой фишкой
+                break;
+              }
+            }
+          }
+
+          // Проверяем физическое место для суффикса
+          if (suffix.length > 0) {
+            const wordEndOffset = word.length;
+            for (let i = 0; i < suffix.length; i++) {
+              const testR = dir === 'H' ? r : r + wordEndOffset + i;
+              const testC = dir === 'H' ? c + wordEndOffset + i : c;
+              if (testR < 0 || testR >= 15 || testC < 0 || testC >= 15) {
+                isPhysicallyPossible = false;
+                break;
+              }
+              if (gameState.board[testR][testC].letter) {
+                isPhysicallyPossible = false;
+                break;
+              }
+            }
+          }
+
+          if (isPhysicallyPossible) {
+            risks.push({
+              targetWord: dictWord,
+              prefix,
+              suffix,
+              scoreImpact: calculatePotentialOpponentPoints(dictWord, prefix, suffix, r, c, dir, idx)
+            });
+          }
+        }
+      });
+
+      return risks.sort((a, b) => b.scoreImpact - a.scoreImpact).slice(0, 2); // Возвращаем топ-2 самые опасные угрозы
+    }
+
+    // Приблизительный расчет очков соперника при достройке
+    function calculatePotentialOpponentPoints(dictWord, prefix, suffix, r, c, dir, matchIdx) {
+      const startR = dir === 'H' ? r : r - prefix.length;
+      const startC = dir === 'H' ? c - prefix.length : c;
+
+      let score = 0;
+      let wordMult = 1;
+
+      for (let i = 0; i < dictWord.length; i++) {
+        const currR = dir === 'H' ? startR : startR + i;
+        const currC = dir === 'H' ? startC + i : startC;
+
+        const isAlreadyOnBoard = (i >= matchIdx && i < matchIdx + dictWord.length - prefix.length - suffix.length);
+        const letterVal = LETTER_POINTS[dictWord[i]] || 1;
+        const mult = getCellMultiplier(currR, currC);
+
+        if (isAlreadyOnBoard) {
+          score += letterVal;
+        } else {
+          if (mult.type === 'x2_letter') score += letterVal * 2;
+          else if (mult.type === 'x3_letter') score += letterVal * 3;
+          else score += letterVal;
+
+          if (mult.type === 'x2_word') wordMult *= 2;
+          else if (mult.type === 'x3_word') wordMult *= 3;
+        }
+      }
+
+      return score * wordMult;
+    }
+
+    // --- STREAMING_CHUNK: Developing Intelligent Search Algorithm... ---
+    // Интеллектуальный поиск ходов по доске
+    function calculateSuggestions() {
+      if (gameState.rack.length === 0) {
+        showToast('Пожалуйста, введите буквы с вашей подставки!', 'error');
+        return;
+      }
+
+      showToast('Начат подбор ходов...', 'info');
+      const candidates = [];
+
+      // Проверяем пуста ли доска
+      let isFirstMove = true;
+      for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+          if (gameState.board[r][c].letter) {
+            isFirstMove = false;
+            break;
+          }
+        }
+      }
+
+      // Генератор точек привязки
+      const anchorPoints = [];
+      if (isFirstMove) {
+        anchorPoints.push({ r: 7, c: 7, isCenter: true });
+      } else {
+        // Ищем все пустые клетки, которые граничат с заполненными (или сами заполненные клетки для пересечений)
+        for (let r = 0; r < 15; r++) {
+          for (let c = 0; c < 15; c++) {
+            if (gameState.board[r][c].letter) {
+              anchorPoints.push({ r, c, isOccupied: true });
+              continue;
+            }
+            
+            // Проверка соседей
+            const hasNeighbor = 
+              (r > 0 && gameState.board[r-1][c].letter !== '') ||
+              (r < 14 && gameState.board[r+1][c].letter !== '') ||
+              (c > 0 && gameState.board[r][c-1].letter !== '') ||
+              (c < 14 && gameState.board[r][c+1].letter !== '');
+
+            if (hasNeighbor) {
+              anchorPoints.push({ r, c, isOccupied: false });
+            }
+          }
+        }
+      }
+
+      // Перебор словаря
+      DICTIONARY.forEach(word => {
+        if (word.length < 2) return;
+
+        anchorPoints.forEach(anchor => {
+          for (let i = 0; i < word.length; i++) {
+            // 1. Попытка ГОРИЗОНТАЛЬНОГО размещения
+            const startH_C = anchor.c - i;
+            if (startH_C >= 0 && startH_C + word.length <= 15) {
+              evaluateAndPushCandidate(word, anchor.r, startH_C, 'H', candidates, isFirstMove);
+            }
+
+            // 2. Попытка ВЕРТИКАЛЬНОГО размещения
+            const startV_R = anchor.r - i;
+            if (startV_R >= 0 && startV_R + word.length <= 15) {
+              evaluateAndPushCandidate(word, startV_R, anchor.c, 'V', candidates, isFirstMove);
+            }
+          }
+        });
+      });
+
+      // Фильтруем дубликаты
+      const uniqueCandidates = [];
+      const seen = new Set();
+      candidates.forEach(cand => {
+        const key = `${cand.word}_${cand.r}_${cand.c}_${cand.dir}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueCandidates.push(cand);
+        }
+      });
+
+      // Сортировка по итоговым очкам
+      uniqueCandidates.sort((a, b) => b.score - a.score);
+
+      renderSuggestions(uniqueCandidates);
+      playSound('success');
+    }
+
+    // Оценка возможности размещения слова с соблюдением правил кроссворда
+    function evaluateAndPushCandidate(word, r, c, dir, candidatesArray, isFirstMove) {
+      const boardLettersNeed = [];
+      let overlapCount = 0;
+      let conflict = false;
+      let touchingExisting = false;
+      let highValueComboText = "";
+
+      // 1. Проверяем концевые стыки (Scrabble rule: слово не может быть частью другого более длинного слова на этой же оси, если мы это не запланировали)
+      if (dir === 'H') {
+        if (c - 1 >= 0 && gameState.board[r][c - 1].letter !== '') return;
+        if (c + word.length < 15 && gameState.board[r][c + word.length].letter !== '') return;
+      } else {
+        if (r - 1 >= 0 && gameState.board[r - 1][c].letter !== '') return;
+        if (r + word.length < 15 && gameState.board[r + word.length][c].letter !== '') return;
+      }
+
+      // Получаем буквы на пути предполагаемого слова и проверяем кроссворд-стыки
+      for (let idx = 0; idx < word.length; idx++) {
+        const currR = dir === 'H' ? r : r + idx;
+        const currC = dir === 'H' ? c + idx : c;
+        const boardTile = gameState.board[currR][currC];
+        const letter = word[idx];
+
+        if (boardTile.letter !== '') {
+          boardLettersNeed.push(boardTile.letter);
+          overlapCount++;
+          touchingExisting = true;
+          if (boardTile.letter !== letter) {
+            conflict = true; // Конфликт букв
+          }
+        } else {
+          boardLettersNeed.push(null);
+
+          // Проверка перпендикулярных кросс-слов для выкладываемой буквы
+          if (dir === 'H') {
+            const crossWord = getVerticalWordAt(currR, currC, letter);
+            if (crossWord !== "") {
+              touchingExisting = true;
+              // Проверяем есть ли это короткое слово в словаре
+              if (!DICTIONARY.has(crossWord)) {
+                conflict = true; // Недопустимое слово образовалось на стыке
+              }
+            }
+          } else {
+            const crossWord = getHorizontalWordAt(currR, currC, letter);
+            if (crossWord !== "") {
+              touchingExisting = true;
+              if (!DICTIONARY.has(crossWord)) {
+                conflict = true;
+              }
+            }
+          }
+        }
+      }
+
+      if (conflict) return;
+      if (overlapCount === word.length) return; // Полное дублирование
+
+      // Правило первого хода: обязано пересекать центр (7,7)
+      if (isFirstMove) {
+        let coversCenter = false;
+        for (let idx = 0; idx < word.length; idx++) {
+          const currR = dir === 'H' ? r : r + idx;
+          const currC = dir === 'H' ? c + idx : c;
+          if (currR === 7 && currC === 7) {
+            coversCenter = true;
+          }
+        }
+        if (!coversCenter) return;
+      } else {
+        // Если не первый ход, слово ОБЯЗАНО пересекать или примыкать к существующим буквам
+        if (!touchingExisting) return;
+      }
+
+      // Проверка составления из подставки
+      const formResult = canFormWord(word, boardLettersNeed, gameState.rack);
+      if (!formResult.possible) return;
+
+      const requireJokers = formResult.jokersRequired.length;
+      
+      // Лимитируем предложения с покупными джокерами до максимум 2-х недостающих джокеров
+      if (requireJokers > 2) return;
+
+      // Моделируем размещение для расчета очков
+      const tilesToPlace = [];
+      for (let idx = 0; idx < word.length; idx++) {
+        const currR = dir === 'H' ? r : r + idx;
+        const currC = dir === 'H' ? c + idx : c;
+        const isJoker = (boardLettersNeed[idx] === null && (formResult.jokersRequired.some(x => x.pos === idx) || idx === word.indexOf('*'))); 
+        
+        // Определение лучшего размещения дорогих букв на множителях (Правило №2)
+        const letterVal = LETTER_POINTS[word[idx]] || 0;
+        const mult = getCellMultiplier(currR, currC);
+        if (boardLettersNeed[idx] === null && letterVal >= 5 && (mult.type === 'x3_letter' || mult.type === 'x2_letter')) {
+          highValueComboText = `🔥 Комбо: буква [${word[idx]}] на ${mult.type === 'x3_letter' ? 'x3' : 'x2'} букве!`;
+        }
+
+        tilesToPlace.push({
+          r: currR,
+          c: currC,
+          letter: word[idx],
+          isJoker
+        });
+      }
+
+      const score = calculateSpecificMoveScore(tilesToPlace);
+
+      // Анализируем угрозы достройки
+      const extensionRisks = analyzeExtensionRisks(word, r, c, dir);
+
+      candidatesArray.push({
+        word,
+        r,
+        c,
+        dir,
+        score,
+        requireJokers,
+        jokersRequiredList: formResult.jokersRequired,
+        risks: extensionRisks,
+        combo: highValueComboText
+      });
+    }
+
+    // --- STREAMING_CHUNK: Displaying Search Recommendations UI... ---
+    // Рендер результатов предложений в UI
+    function renderSuggestions(candidates) {
+      const container = document.getElementById('suggestionsList');
+      container.innerHTML = '';
+      
+      document.getElementById('suggestionsCount').textContent = `Найдено: ${candidates.length}`;
+
+      if (candidates.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-slate-500">
+            <i data-lucide="info" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+            <p class="text-xs">Ничего не найдено. Напишите слово на подставке так, чтобы оно пересекалось или дополняло буквы на доске.</p>
+          </div>
+        `;
+        return;
+      }
+
+      candidates.forEach(cand => {
+        const div = document.createElement('div');
+        const isJokerDeal = cand.requireJokers > 0;
+        
+        div.className = `p-4 rounded-2xl border transition relative overflow-hidden flex flex-col justify-between ${
+          isJokerDeal 
+          ? 'bg-slate-900/30 border-amber-900/40 hover:border-amber-700/60' 
+          : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+        }`;
+
+        // Декоративный бэкграунд для джокерных слов
+        if (isJokerDeal) {
+          const decor = document.createElement('div');
+          decor.className = 'absolute -right-4 -bottom-4 text-amber-500/5 rotate-12 pointer-events-none';
+          decor.innerHTML = '<i data-lucide="gem" class="w-24 h-24"></i>';
+          div.appendChild(decor);
+        }
+
+        const topRow = document.createElement('div');
+        topRow.className = 'flex items-center justify-between';
+
+        const leftGroup = document.createElement('div');
+        leftGroup.className = 'flex items-center space-x-2';
+
+        const wordSpan = document.createElement('span');
+        wordSpan.className = 'font-mono-custom font-extrabold text-lg text-slate-100 tracking-wider';
+        wordSpan.textContent = cand.word;
+
+        const dirBadge = document.createElement('span');
+        dirBadge.className = 'text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-bold';
+        dirBadge.textContent = `${COL_LABELS[cand.c]}${cand.r + 1} • ${cand.dir === 'H' ? 'Г' : 'В'}`;
+
+        leftGroup.appendChild(wordSpan);
+        leftGroup.appendChild(dirBadge);
+
+        // Очки за ход
+        const rightGroup = document.createElement('div');
+        rightGroup.className = 'text-right flex items-center space-x-2';
+        
+        const scoreVal = document.createElement('span');
+        scoreVal.className = `text-lg font-black ${isJokerDeal ? 'text-amber-400' : 'text-emerald-400'}`;
+        scoreVal.textContent = `+${cand.score} очк.`;
+
+        rightGroup.appendChild(scoreVal);
+
+        topRow.appendChild(leftGroup);
+        topRow.appendChild(rightGroup);
+        div.appendChild(topRow);
+
+        // Индикатор комбо дорогих букв (Правило №2)
+        if (cand.combo) {
+          const comboLine = document.createElement('div');
+          comboLine.className = 'mt-1 text-[10px] text-emerald-400 font-semibold flex items-center space-x-1';
+          comboLine.innerHTML = `<i data-lucide="flame" class="w-3.5 h-3.5 text-emerald-500"></i> <span>${cand.combo}</span>`;
+          div.appendChild(comboLine);
+        }
+
+        // БЕЗЦЕНОВОЙ блок покупки джокеров (Правило №7)
+        if (isJokerDeal) {
+          const jokersLine = document.createElement('div');
+          jokersLine.className = 'mt-2 flex items-center space-x-1.5 text-[10px] text-amber-400 bg-amber-950/20 border border-amber-900/30 px-2 py-1 rounded-lg w-max';
+          jokersLine.innerHTML = `
+            <i data-lucide="gem" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span>Требуется джокеров: <strong class="font-extrabold">${cand.requireJokers} шт.</strong></span>
+          `;
+          div.appendChild(jokersLine);
+        }
+
+        // Блок анализа рисков достройки соперником (Правило №6)
+        if (cand.risks && cand.risks.length > 0) {
+          const riskBlock = document.createElement('div');
+          riskBlock.className = 'mt-3 pt-2.5 border-t border-slate-800/80 space-y-1.5';
+          
+          cand.risks.forEach(risk => {
+            const riskItem = document.createElement('div');
+            riskItem.className = 'flex items-center justify-between text-[10px] text-slate-400 bg-red-950/10 border border-red-950/30 px-2 py-1.5 rounded-lg';
+            
+            let explanation = '';
+            if (risk.prefix && risk.suffix) {
+              explanation = `Допишет по бокам «${risk.prefix}...${risk.suffix}» до «${risk.targetWord}»`;
+            } else if (risk.prefix) {
+              explanation = `Припишет спереди «${risk.prefix}...» до «${risk.targetWord}»`;
+            } else {
+              explanation = `Припишет сзади «...${risk.suffix}» до «${risk.targetWord}»`;
+            }
+
+            riskItem.innerHTML = `
+              <span class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5 animate-pulse"></span> ${explanation}</span>
+              <span class="text-red-400 font-extrabold">Соперник получит: +${risk.scoreImpact} очков</span>
+            `;
+            riskBlock.appendChild(riskItem);
+          });
+          div.appendChild(riskBlock);
+        }
+
+        // Кнопка быстрого переноса на доску
+        const botRow = document.createElement('div');
+        botRow.className = 'mt-3 flex items-center justify-between';
+
+        const infoSpan = document.createElement('span');
+        infoSpan.className = 'text-[9px] text-slate-500';
+        infoSpan.textContent = isJokerDeal ? 'Учтена симуляция использования джокеров' : 'Доступно из текущих фишек на руках';
+
+        const applyBtn = document.createElement('button');
+        applyBtn.className = `px-3.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center space-x-1.5 transition ${
+          isJokerDeal 
+          ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 shadow-md shadow-amber-950/30' 
+          : 'bg-indigo-600/40 hover:bg-indigo-600 border border-indigo-500 text-slate-200'
+        }`;
+        
+        if (isJokerDeal) {
+          applyBtn.onclick = () => simulateBuyAndPlay(cand);
+          applyBtn.innerHTML = '<i data-lucide="gem" class="w-3.5 h-3.5"></i> <span>Взять джокер & Ходить</span>';
+        } else {
+          applyBtn.onclick = () => playSuggestedMove(cand);
+          applyBtn.innerHTML = '<i data-lucide="arrow-right" class="w-3.5 h-3.5"></i> <span>на доску</span>';
+        }
+
+        botRow.appendChild(infoSpan);
+        botRow.appendChild(applyBtn);
+        div.appendChild(botRow);
+
+        container.appendChild(div);
+      });
+
+      // Переинициализируем иконки в динамических элементах
+      lucide.createIcons();
+    }
+
+    // Симуляция покупки джокеров и хода
+    function simulateBuyAndPlay(cand) {
+      playSound('coin');
+      showToast(`Использовано дополнительных джокеров: ${cand.requireJokers} шт.`, 'success');
+      playSuggestedMove(cand);
+    }
+
+    // Применение выбранного хода из рекомендаций на доску
+    function playSuggestedMove(cand) {
+      const { word, r, c, dir, score, jokersRequiredList } = cand;
+      const jokers = jokersRequiredList.map(j => j.pos);
+
+      const wordTilesToPlace = [];
+      for (let i = 0; i < word.length; i++) {
+        const currR = dir === 'H' ? r : r + i;
+        const currC = dir === 'H' ? c + i : c;
+        const letter = word[i];
+        const isJoker = jokers.includes(i);
+        wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker });
+      }
+
+      // Применяем
+      wordTilesToPlace.forEach(tile => {
+        gameState.board[tile.r][tile.c] = {
+          letter: tile.letter,
+          isJoker: tile.isJoker,
+          isNew: false
+        };
+      });
+
+      // Очищаем подставку на основе использованных букв
+      let rackString = document.getElementById('rackInput').value.toUpperCase();
+      word.split('').forEach((letter, idx) => {
+        const hasLetter = rackString.indexOf(letter);
+        if (hasLetter !== -1) {
+          rackString = rackString.replace(letter, '');
+        } else {
+          rackString = rackString.replace('*', '');
+        }
+      });
+      
+      // Обновляем инпут подставки
+      document.getElementById('rackInput').value = rackString;
+      gameState.rack = rackString.split('');
+      document.getElementById('rackCount').textContent = `${gameState.rack.length} / 7 букв`;
+
+      // Начисляем очки игроку
+      gameState.playerScore += score;
+      updateScoreboardDisplay();
+
+      // Пишем в историю
+      gameState.history.push({
+        player: 'player',
+        word,
+        r,
+        c,
+        dir,
+        score,
+        jokers
+      });
+
+      playSound('success');
+      showToast(`Ход совершен! Вы сыграли «${word}» на координату ${COL_LABELS[c]}${r+1} (+${score} очк.)`, 'success');
+
+      renderBoard();
+      renderBag();
+      updateHistoryDisplay();
+      renderRackTiles();
+      
+      // Очищаем список рекомендаций
+      document.getElementById('suggestionsList').innerHTML = `
+        <div class="text-center py-12 text-slate-500">
+          <i data-lucide="sparkles" class="w-12 h-12 mx-auto text-indigo-500/40 mb-3 animate-pulse"></i>
+          <p class="text-xs">Ход выполнен. Пересчитайте варианты на новый ход!</p>
+        </div>
+      `;
+      document.getElementById('suggestionsCount').textContent = 'Найдено: 0';
+    }
+
+    // --- STREAMING_CHUNK: Managing Tab Navigation Controls... ---
+    // --- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ПАНЕЛИ УПРАВЛЕНИЯ ---
+    function switchTab(tabId) {
+      playSound('tap');
+      
+      // Скрываем все вкладки
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      // Деактивируем кнопки
+      document.querySelectorAll('[id^="tabBtn-"]').forEach(btn => {
+        btn.className = 'flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200';
+      });
+
+      // Показываем активную вкладку
+      document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
+      // Активируем кнопку
+      document.getElementById(`tabBtn-${tabId}`).className = 'flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 bg-indigo-600 text-white';
+
+      gameState.activeTab = tabId;
+    }
+
+    // --- ОБРАБОТКА ПОЛЬЗОВАТЕЛЬСКОГО СЛОВАРЯ ---
+    function triggerFileInput() {
+      playSound('tap');
+      document.getElementById('dictFileInput').click();
+    }
+
+    function handleDictUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const words = text.split(/[\r\n\s,]+/)
+                          .map(w => w.trim().toUpperCase().replace('Ё', 'Е'))
+                          .filter(w => w.length >= 2 && /^[А-Я]+$/.test(w));
+        
+        if (words.length === 0) {
+          showToast('Файл пуст или не содержит корректных русских слов!', 'error');
+          return;
+        }
+
+        words.forEach(word => DICTIONARY.add(word));
+        
+        playSound('success');
+        showToast(`Словарь успешно расширен! Добавлено слов: ${words.length}`, 'success');
+        updateDictStatusText(`Словарь: Пользовательский (${DICTIONARY.size} слов)`);
+        autoCalculateIfPossible();
+      };
+      reader.readAsText(file);
+    }
+
+    // --- СИСТЕМА УВЕДОМЛЕНИЙ (TOAST) ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let borderClass = 'border-slate-800 bg-slate-900';
+      let icon = '<i data-lucide="info" class="w-4 h-4 text-sky-400"></i>';
+      if (type === 'success') {
+        borderClass = 'border-emerald-800/80 bg-emerald-950/40 backdrop-blur';
+        icon = '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>';
+      } else if (type === 'error') {
+        borderClass = 'border-red-800/80 bg-red-950/40 backdrop-blur';
+        icon = '<i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i>';
+      }
+
+      toast.className = `flex items-center space-x-3 px-4 py-3 rounded-xl border text-xs text-slate-100 shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 ${borderClass}`;
+      toast.innerHTML = `
+        ${icon}
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // --- ДРУГИЕ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+    function toggleRulesModal() {
+      playSound('tap');
+      const modal = document.getElementById('rulesModal');
+      modal.classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>
