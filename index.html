@@ -380,7 +380,7 @@
     </div>
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО СЖИГАНИЯ/ЖЕРТВОВАНИЯ ФИШЕК ПРИ ПОКУПКЕ ДЖОКЕРОВ (Потребность №2) -->
+  <!-- МОДАЛЬНОЕ ОКНО СЖИГАНИЯ/ЖЕРТВОВАНИЯ ФИШЕК ПРИ ПОКУПКЕ ДЖОКЕРОВ -->
   <div id="sacrificeModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl relative">
       <h3 class="text-lg font-bold text-slate-200 mb-2 flex items-center">
@@ -471,11 +471,6 @@
     </div>
   </div>
 
-  <!-- Футер -->
-  <footer class="border-t border-slate-800 py-4 px-6 text-center text-xs text-slate-500 bg-slate-950 mt-auto">
-    <span>Разработано в соответствии с регламентом Эрудит • 2026 г. • Темная тема Premium</span>
-  </footer>
-
   <!-- Информационные всплывающие подсказки (Toast) -->
   <div id="toastContainer" class="fixed bottom-6 right-6 space-y-2 z-50"></div>
 
@@ -513,7 +508,7 @@
       opponentScore: 0,
       rack: [],
       destroyed: [], // Навсегда уничтоженные (сгоревшие) буквы игрока при покупке джокеров
-      history: [], // Лог ходов { player, word, r, c, dir, score, jokers, destroyedTiles }
+      history: [], // Лог ходов { player, word, r, c, dir, score, jokers, destroyedTiles, previousRack }
       activeTab: 'suggestions',
       suggestionsFilter: 'all' // 'all' | 'rack' | 'joker'
     };
@@ -656,71 +651,15 @@
       return { type: 'normal', label: '', val: 1, color: '#1e293b', textClass: 'text-slate-500' };
     }
 
-    // --- ИНИЦИАЛИЗАЦИЯ И ОТРИСОВКА ---
-    window.onload = async function() {
-      // Инициализируем иконки Lucide
-      lucide.createIcons();
-      
-      // Заполняем дефолтный словарь
-      BUILTIN_WORDS.forEach(word => DICTIONARY.add(word));
-      updateDictStatusText(`Встроенный словарь (${DICTIONARY.size} сущ.)`);
-
-      // Заполняем выбор столбцов для ручной записи
-      const manualColSelect = document.getElementById('manualCol');
-      manualColSelect.innerHTML = '';
-      COL_LABELS.forEach((label, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = label;
-        if (idx === 7) opt.selected = true;
-        manualColSelect.appendChild(opt);
-      });
-
-      // Рендерим доску
-      renderBoard();
-      // Рендерим мешок
-      renderBag();
-      
-      // Пытаемся автоматически загрузить внешние файлы словаря
-      await tryFetchExternalDictionaries();
-
-      // Ограничим ввод только русскими буквами в ручном вводе
-      const manualWordInput = document.getElementById('manualWord');
-      manualWordInput.addEventListener('input', function() {
-        this.value = this.value.toUpperCase().replace(/[^А-ЯЁ]/g, '');
-        generateManualJokersCheckboxes(this.value);
-      });
-    };
-
-    // Попытка асинхронной загрузки файлов
-    async function tryFetchExternalDictionaries() {
-      const filesToTry = ['nouns.txt', 'dictionary.txt'];
-      for (const fileName of filesToTry) {
-        try {
-          const response = await fetch(fileName);
-          if (response.ok) {
-            const text = await response.text();
-            const words = text.split(/[\r\n\s,]+/)
-                              .map(w => w.trim().toUpperCase().replace('Ё', 'Е'))
-                              .filter(w => w.length >= 2 && /^[А-Я]+$/.test(w));
-            if (words.length > 0) {
-              words.forEach(word => DICTIONARY.add(word));
-              updateDictStatusText(`Загружен словарь: ${fileName} (${DICTIONARY.size} слов)`);
-              showToast(`Успешно подгружено ${words.length} слов из ${fileName}`, 'success');
-              break;
-            }
-          }
-        } catch (e) {
-          // Игнорируем ошибку недоступности файла
-        }
+    // --- ФУНКЦИЯ ОБНОВЛЕНИЯ СТАТУСА СЛОВАРЯ (ИСПРАВЛЕНИЕ ОШИБКИ) ---
+    function updateDictStatusText(text) {
+      const el = document.getElementById('dictionaryStatus');
+      if (el) {
+        el.textContent = text;
       }
     }
 
-    function updateDictStatusText(text) {
-      document.getElementById('dictionaryStatus').textContent = text;
-    }
-
-    // Рендер виртуальной доски 15х15
+    // --- ИНИЦИАЛИЗАЦИЯ И ОТРИСОВКА ---
     function renderBoard() {
       const container = document.getElementById('boardContainer');
       container.innerHTML = '';
@@ -1116,7 +1055,8 @@
         dir,
         score,
         jokers,
-        destroyedTiles: [] // Ручные слова не уничтожают джокеров автоматически
+        destroyedTiles: [], // Ручные слова не уничтожают джокеров автоматически
+        previousRack: [...gameState.rack] // Запоминаем текущую руку для отката
       });
 
       playSound('success');
@@ -1294,16 +1234,11 @@
         }
       });
 
-      // Если удаленный ход содержал сгоревшие плитки, вернем их обратно на подставку
-      if (lastMove.destroyedTiles && lastMove.destroyedTiles.length > 0) {
-        let currentRack = document.getElementById('rackInput').value.toUpperCase();
-        lastMove.destroyedTiles.forEach(letter => {
-          currentRack += letter;
-        });
-        // Ограничим 7 буквами
-        currentRack = currentRack.slice(0, 7);
-        document.getElementById('rackInput').value = currentRack;
-        gameState.rack = currentRack.split('');
+      // ВОССТАНАВЛИВАЕМ РУКУ (ПОДСТАВКУ) РОКОВОЙ СВЕЖЕСТИ! (Восстановление руки "как и было")
+      if (lastMove.previousRack) {
+        gameState.rack = [...lastMove.previousRack];
+        const rackString = gameState.rack.join('');
+        document.getElementById('rackInput').value = rackString;
         document.getElementById('rackCount').textContent = `${gameState.rack.length} / 7 букв`;
       }
 
@@ -1779,12 +1714,12 @@
       playSound('tap');
       gameState.suggestionsFilter = filterType;
 
-      // Сбрасываем стайлинг кнопок фильтров
+      // Сбросить стайлинг кнопок фильтров
       document.querySelectorAll('[id^="filter-"]').forEach(btn => {
         btn.className = 'px-2.5 py-1 text-[9px] font-extrabold rounded-lg transition-all duration-150 text-slate-400 hover:text-slate-200 flex items-center space-x-1';
       });
 
-      // Подсвечиваем активный фильтр
+      // Подсветить активный фильтр
       const activeBtn = document.getElementById(`filter-${filterType}`);
       if (activeBtn) {
         activeBtn.className = 'px-2.5 py-1 text-[9px] font-extrabold rounded-lg transition-all duration-150 bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 flex items-center space-x-1';
@@ -2077,29 +2012,23 @@
       // Считываем уничтожаемые буквы на основе выбранных индексов
       const sacrificedLetters = selectedSacrificeIndices.map(idx => gameState.rack[idx]);
 
-      // Добавляем в общий список уничтоженных фишек
-      gameState.destroyed.push(...sacrificedLetters);
-
-      // Специфически удаляем сгоревшие фишки с подставки игрока
-      // Сортируем индексы по убыванию, чтобы корректно удалить элементы без сдвига индексов
-      const sortedIndices = [...selectedSacrificeIndices].sort((a, b) => b - a);
-      sortedIndices.forEach(idx => {
-        gameState.rack.splice(idx, 1);
-      });
-
-      // Делаем ход с сохранением сгоревших плиток
+      // Делаем ход с передачей индексов сжигания фишек
       playSound('coin');
       showToast(`Уничтожено фишек: ${sacrificedLetters.join(', ')}. Они навсегда исключены из мешка!`, 'success');
       
-      playSuggestedMove(pendingCandidate, sacrificedLetters);
+      playSuggestedMove(pendingCandidate, sacrificedLetters, selectedSacrificeIndices);
       closeSacrificeModal();
     }
 
     // Применение выбранного хода из рекомендаций на доску
-    function playSuggestedMove(cand, sacrificedLetters = []) {
+    function playSuggestedMove(cand, sacrificedLetters = [], sacrificeIndices = []) {
       const { word, r, c, dir, score, jokersRequiredList } = cand;
       const jokers = jokersRequiredList.map(j => j.pos);
 
+      // 1. Сохраняем исходное состояние руки для истории (Снятие копии руки для отката)
+      const originalRack = [...gameState.rack];
+
+      // 2. Выкладываем буквы на доску
       const wordTilesToPlace = [];
       for (let i = 0; i < word.length; i++) {
         const currR = dir === 'H' ? r : r + i;
@@ -2109,7 +2038,6 @@
         wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker });
       }
 
-      // Применяем
       wordTilesToPlace.forEach(tile => {
         gameState.board[tile.r][tile.c] = {
           letter: tile.letter,
@@ -2118,31 +2046,26 @@
         };
       });
 
-      // Очищаем подставку на основе использованных букв
-      let rackString = gameState.rack.join('');
-      word.split('').forEach((letter, idx) => {
-        // Мы берем только те буквы, которых не было на доске до хода
-        const wasOnBoard = gameState.board[dir === 'H' ? r : r + idx][dir === 'H' ? c + idx : c].letter !== '' && !gameState.board[dir === 'H' ? r : r + idx][dir === 'H' ? c + idx : c].isNew;
-        if (!wasOnBoard && !jokers.includes(idx)) {
-          const hasLetter = rackString.indexOf(letter);
-          if (hasLetter !== -1) {
-            rackString = rackString.replace(letter, '');
-          } else {
-            rackString = rackString.replace('*', '');
-          }
-        }
-      });
-      
-      // Обновляем инпут подставки
+      // 3. Вычисляем и списываем потраченные фишки из руки
+      const consumedIndices = [...cand.rackIndicesUsed, ...sacrificeIndices];
+      const newRack = originalRack.filter((_, idx) => !consumedIndices.includes(idx));
+
+      // 4. Обновляем руку в памяти и на дисплее
+      gameState.rack = newRack;
+      const rackString = newRack.join('');
       document.getElementById('rackInput').value = rackString;
-      gameState.rack = rackString.split('');
       document.getElementById('rackCount').textContent = `${gameState.rack.length} / 7 букв`;
 
-      // Начисляем очки игроку
+      // 5. Пополняем массив сгоревших фишек
+      if (sacrificedLetters.length > 0) {
+        gameState.destroyed.push(...sacrificedLetters);
+      }
+
+      // 6. Начисляем очки игроку
       gameState.playerScore += score;
       updateScoreboardDisplay();
 
-      // Пишем в историю
+      // 7. Пишем в историю для поддержки безопасного Undo
       gameState.history.push({
         player: 'player',
         word,
@@ -2151,7 +2074,8 @@
         dir,
         score,
         jokers,
-        destroyedTiles: sacrificedLetters // Логируем в историю для безопасного Undo
+        destroyedTiles: sacrificedLetters,
+        previousRack: originalRack // Сохраняем полный слепок руки
       });
 
       playSound('success');
@@ -2263,6 +2187,67 @@
       const modal = document.getElementById('rulesModal');
       modal.classList.toggle('hidden');
     }
+
+    // --- ПЕРВИЧНАЯ ЗАГРУЗКА И ИНИЦИАЛИЗАЦИЯ ---
+    window.onload = async function() {
+      // Инициализируем иконки Lucide
+      lucide.createIcons();
+      
+      // Заполняем дефолтный словарь
+      BUILTIN_WORDS.forEach(word => DICTIONARY.add(word));
+      updateDictStatusText(`Встроенный словарь (${DICTIONARY.size} сущ.)`);
+
+      // Заполняем выбор столбцов для ручной записи
+      const manualColSelect = document.getElementById('manualCol');
+      manualColSelect.innerHTML = '';
+      COL_LABELS.forEach((label, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = label;
+        if (idx === 7) opt.selected = true;
+        manualColSelect.appendChild(opt);
+      });
+
+      // Ограничим ввод только русскими буквами в ручном вводе
+      const manualWordInput = document.getElementById('manualWord');
+      if (manualWordInput) {
+        manualWordInput.addEventListener('input', function() {
+          this.value = this.value.toUpperCase().replace(/[^А-ЯЁ]/g, '');
+          generateManualJokersCheckboxes(this.value);
+        });
+      }
+
+      // Рендерим доску
+      renderBoard();
+      // Рендерим мешок
+      renderBag();
+      
+      // Пытаемся автоматически загрузить внешние файлы словаря
+      await tryFetchExternalDictionaries();
+    };
+
+    async function tryFetchExternalDictionaries() {
+      const filesToTry = ['nouns.txt', 'dictionary.txt'];
+      for (const fileName of filesToTry) {
+        try {
+          const response = await fetch(fileName);
+          if (response.ok) {
+            const text = await response.text();
+            const words = text.split(/[\r\n\s,]+/)
+                              .map(w => w.trim().toUpperCase().replace('Ё', 'Е'))
+                              .filter(w => w.length >= 2 && /^[А-Я]+$/.test(w));
+            if (words.length > 0) {
+              words.forEach(word => DICTIONARY.add(word));
+              updateDictStatusText(`Загружен словарь: ${fileName} (${DICTIONARY.size} слов)`);
+              showToast(`Успешно подгружено ${words.length} слов из ${fileName}`, 'success');
+              break;
+            }
+          }
+        } catch (e) {
+          // Игнорируем ошибку недоступности файла
+        }
+      }
+    }
   </script>
 </body>
-  </html>
+</html>
