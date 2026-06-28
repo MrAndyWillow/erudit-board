@@ -1157,16 +1157,11 @@
       const msgEl = document.getElementById('warningModalMessage');
       msgEl.innerHTML = `
         Вы пытаетесь записать ход <strong>«${data.word}»</strong> за себя (Игрока), но на вашей подставке отсутствуют подходящие фишки.<br><br>
-        Возможно, вы забыли изменить игрока на <strong>«Соперник»</strong>? Алгоритм рекомендует переназначить ход.
+        Возможно, вы забыли изменить игрока на <strong>«Соперник»</strong>? Алгоритм сверил буквы вашей руки и рекомендует переназначить ход.
       `;
 
       document.getElementById('manualTurnWarningModal').classList.remove('hidden');
       lucide.createIcons();
-    }
-
-    function closeManualTurnWarningModal() {
-      document.getElementById('manualTurnWarningModal').classList.add('hidden');
-      pendingManualMove = null;
     }
 
     function resolveManualWarning(selectedPlayer) {
@@ -1185,6 +1180,15 @@
 
     function executeApplyManualWordWithConsumption(player, word, r, c, dir, jokers, score, wordTilesToPlace, rackIndicesUsed) {
       const previousRack = [...gameState.rack];
+
+      // Вычисляем, сколько новых букв будет выставлено на доску
+      let newlyPlacedCount = 0;
+      wordTilesToPlace.forEach(tile => {
+        if (!gameState.board[tile.r][tile.c].letter) {
+          newlyPlacedCount++;
+        }
+      });
+      const bonusText = newlyPlacedCount === 7 ? ' (Включая бонус +15 очков за 7 фишек!)' : '';
 
       // 1. Выкладываем фишки на доску
       wordTilesToPlace.forEach(tile => {
@@ -1226,7 +1230,7 @@
       });
 
       playSound('success');
-      showToast(`Слово «${word}» записано за ${player === 'player' ? 'Игрока' : 'Соперника'}! (+${score} очк.)`, 'success');
+      showToast(`Слово «${word}» записано за ${player === 'player' ? 'Игрока' : 'Соперника'}! (+${score} очк.)${bonusText}`, 'success');
 
       clearManualWord();
       updateScoreboardDisplay();
@@ -1887,11 +1891,16 @@
 
       // Моделируем размещение для расчета очков
       const tilesToPlace = [];
+      let newlyPlacedCount = 0;
       for (let idx = 0; idx < word.length; idx++) {
         const currR = dir === 'H' ? r : r + idx;
         const currC = dir === 'H' ? c + idx : c;
         const isJoker = (boardLettersNeed[idx] === null && (formResult.jokersRequired.some(x => x.pos === idx) || idx === word.indexOf('*'))); 
         
+        if (boardLettersNeed[idx] === null) {
+          newlyPlacedCount++;
+        }
+
         // Определение лучшего размещения дорогих букв на множителях
         const letterVal = LETTER_POINTS[word[idx]] || 0;
         const mult = getCellMultiplier(currR, currC);
@@ -1923,7 +1932,8 @@
         jokersUsedFromRack: formResult.jokersUsedFromRack,
         rackIndicesUsed: formResult.rackIndicesUsed,
         risks: extensionRisks,
-        combo: highValueComboText
+        combo: highValueComboText,
+        usedAllLettersBonus: (newlyPlacedCount === 7) // Флаг бонуса +15 очков
       });
     }
 
@@ -2027,6 +2037,14 @@
           comboLine.className = 'mt-1 text-[10px] text-emerald-400 font-semibold flex items-center space-x-1';
           comboLine.innerHTML = `<i data-lucide="flame" class="w-3.5 h-3.5 text-emerald-500"></i> <span>${cand.combo}</span>`;
           div.appendChild(comboLine);
+        }
+
+        // ВИЗУАЛИЗАЦИЯ БОНУСА +15 ОЧКОВ
+        if (cand.usedAllLettersBonus) {
+          const bonusLine = document.createElement('div');
+          bonusLine.className = 'mt-1 text-[10px] text-amber-400 font-semibold flex items-center space-x-1';
+          bonusLine.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400 animate-pulse"></i> <span>✨ Бонус +15 очков (Использованы все 7 фишек!)</span>`;
+          div.appendChild(bonusLine);
         }
 
         if (isJokerDeal) {
@@ -2271,6 +2289,7 @@
       const rackString = newRack.join('');
       document.getElementById('rackInput').value = rackString;
       document.getElementById('rackCount').textContent = `${newRack.length} / 7 букв`;
+      renderRackTiles();
 
       // 5. Пополняем массив сгоревших фишек
       if (sacrificedLetters.length > 0) {
@@ -2281,7 +2300,7 @@
       gameState.playerScore += score;
       updateScoreboardDisplay();
 
-      // 7. Пишем в историю для поддержки безопасного Undo
+      // 7. Записываем в историю для поддержки безопасного Undo
       gameState.history.push({
         player: 'player',
         word,
@@ -2294,13 +2313,15 @@
         previousRack: originalRack // Сохраняем слепок руки
       });
 
+      // Отображаем текстовое оповещение о бонусе (Потребность №1)
+      const bonusText = cand.usedAllLettersBonus ? ' (Включая бонус +15 очков за 7 фишек!)' : '';
+
       playSound('success');
-      showToast(`Ход совершен! Вы сыграли «${word}» на координату ${COL_LABELS[c]}${r+1} (+${score} очк.)`, 'success');
+      showToast(`Ход совершен! Вы сыграли «${word}» на координату ${COL_LABELS[c]}${r+1} (+${score} очк.)${bonusText}`, 'success');
 
       renderBoard();
       renderBag();
       updateHistoryDisplay();
-      renderRackTiles();
       updateDefaultManualPlayer();
       
       // Очищаем список рекомендаций
