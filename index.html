@@ -228,7 +228,7 @@
           <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-3 mb-3 gap-2">
             <h4 class="font-bold text-slate-200 text-sm">Рекомендации ходов</h4>
             
-            <!-- Лаконичные фильтры вывода результатов (Потребность №1) -->
+            <!-- Лаконичные фильтры вывода результатов -->
             <div class="flex items-center space-x-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
               <button onclick="setSuggestionsFilter('all')" id="filter-all" class="px-2.5 py-1 text-[9px] font-extrabold rounded-lg transition-all duration-150 bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 flex items-center space-x-1">
                 <i data-lucide="layers" class="w-3 h-3"></i> <span>Все</span>
@@ -260,16 +260,17 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-medium text-slate-400 mb-1.5">Кто походил?</label>
+            <!-- СОПЕРНИК ВЫСТАВЛЕН НАЧАЛЬНЫМ -->
             <select id="manualPlayer" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="opponent" selected>Соперник</option>
               <option value="player">Вы (Игрок)</option>
-              <option value="opponent">Соперник</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-400 mb-1.5">Слово (только буквы)</label>
             <div class="relative">
               <input type="text" id="manualWord" placeholder="Например: СЛОН" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-10 py-2 text-xs text-slate-100 uppercase tracking-widest focus:outline-none focus:border-indigo-500">
-              <!-- КНОПКА УДАЛЕНИЯ СЛОВА (ОЧИСТКИ) -->
+              <!-- КНОПКА ОЧИСТКИ ВСЕГО ВВЕДЕННОГО СЛОВА -->
               <button onclick="clearManualWord()" class="absolute right-2.5 top-2 text-slate-500 hover:text-red-400 transition" title="Удалить всё слово">
                 <i data-lucide="x-circle" class="w-4.5 h-4.5"></i>
               </button>
@@ -305,7 +306,7 @@
           </div>
         </div>
 
-        <!-- КНОПКА "НА ДОСКУ" КАК В РАЗДЕЛЕ ПОДБОРА -->
+        <!-- КНОПКА "НА ДОСКУ" -->
         <div class="flex gap-3 pt-2">
           <button onclick="applyManualWordToBoard()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-950/50">
             <i data-lucide="arrow-right-to-line" class="w-4 h-4"></i>
@@ -392,7 +393,7 @@
       </p>
       
       <div id="sacrificeTilesContainer" class="flex flex-wrap gap-2.5 justify-center py-4 px-2 bg-slate-950 rounded-xl border border-slate-800/80 mb-4">
-        <!-- Генерируется на лету -->
+        <!-- Generates dynamic letter checkboxes -->
       </div>
 
       <div class="flex items-center justify-between text-xs text-slate-400 mb-5">
@@ -405,6 +406,41 @@
           Подтвердить ход
         </button>
         <button onclick="closeSacrificeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-2.5 rounded-xl transition">
+          Отмена
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО ПРЕДУПРЕЖДЕНИЯ О НЕСОВПАДЕНИИ БУКВ ИЛИ ОЧЕРЕДНОСТИ -->
+  <div id="manualTurnWarningModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl relative">
+      <h3 class="text-lg font-bold text-slate-200 mb-2 flex items-center text-amber-500">
+        <i data-lucide="alert-triangle" class="w-5 h-5 mr-2 animate-bounce"></i>
+        <span>Конфликт хода / очередности</span>
+      </h3>
+      <p class="text-xs text-slate-300 mb-4 leading-relaxed" id="warningModalMessage">
+        Вы записываете ход за себя, но у вас на руках нет нужных фишек.
+      </p>
+
+      <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/80 mb-5 space-y-2">
+        <div class="text-xs text-slate-400">Слово: <strong class="text-amber-400 font-mono-custom" id="warningModalWord">СЛОВО</strong></div>
+        <div class="text-xs text-slate-400">Недостает фишек: <span class="text-red-400 font-bold font-mono-custom" id="warningModalMissing">А, Б</span></div>
+        <div class="text-xs text-red-400 font-semibold hidden" id="warningModalTurnOrder">
+          ⚠️ Обратите внимание: нарушена очередность (вы ходили на предыдущем ходу).
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <button onclick="resolveManualWarning('opponent')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
+          <i data-lucide="swords" class="w-4 h-4"></i>
+          <span>Исправить на: Соперник</span>
+        </button>
+        <button onclick="resolveManualWarning('player')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 border border-slate-700">
+          <i data-lucide="user" class="w-4 h-4 text-emerald-400"></i>
+          <span>Всё равно записать на меня (Игрок)</span>
+        </button>
+        <button onclick="closeManualTurnWarningModal()" class="w-full bg-slate-950/50 hover:bg-slate-900 text-slate-500 text-xs font-semibold py-2 transition rounded-xl">
           Отмена
         </button>
       </div>
@@ -471,9 +507,6 @@
     </div>
   </div>
 
-  <!-- Информационные всплывающие подсказки (Toast) -->
-  <div id="toastContainer" class="fixed bottom-6 right-6 space-y-2 z-50"></div>
-
   <!-- Скрипты приложения -->
   <script>
     // --- ПЕРЕМЕННЫЕ И НАСТРОЙКИ ---
@@ -507,11 +540,14 @@
       playerScore: 0,
       opponentScore: 0,
       rack: [],
-      destroyed: [], // Навсегда уничтоженные (сгоревшие) буквы игрока при покупке джокеров
+      destroyed: [], // Навсегда уничтоженные фишки игрока при покупке джокеров
       history: [], // Лог ходов { player, word, r, c, dir, score, jokers, destroyedTiles, previousRack }
       activeTab: 'suggestions',
-      suggestionsFilter: 'all' // 'all' | 'rack' | 'joker'
+      suggestionsFilter: 'all', // 'all' | 'rack' | 'joker'
+      lastCalculatedSuggestions: []
     };
+
+    let pendingManualMove = null;
 
     // Словарь
     const DICTIONARY = new Set();
@@ -538,7 +574,6 @@
       "УЧЕНИК", "УЧИТЕЛЬ", "ФАКЕЛ", "ФЛАГ", "ФОНАРЬ", "ФОТОГРАФИЯ", "ХЛЕБ", "ХОЛОД", "ЦВЕТОК", "ЦАРЬ", "ЧАЙ", 
       "ЧАЙНИК", "ЧАСЫ", "ЧАШКА", "ЧЕЛОВЕК", "ЧЕМОДАН", "ЧЕРЕПАХА", "ЧИСЛО", "ШКАФ", "ШКОЛА", "ШЛЯПА", 
       "ШОКОЛАД", "ЩЕТКА", "ЩУКА", "ЭКРАН", "ЮБКА", "ЮГ", "ЯБЛОКО", "ЯГОДА", "ЯЗЫК", "ЯКОРЬ", "ЯЩИК",
-      // Примеры расширенных слов для тестирования рисков продолжений
       "СЛОНИК", "ЗАСЛОН", "ЗАСЛОНКА", "СЛОНИХА", "СЛОНЫ", "СЛОНЕНОК", "ЗАВТРАК", "ОБЕД", "УЖИН", "ПОЛДНИК"
     ];
 
@@ -651,7 +686,7 @@
       return { type: 'normal', label: '', val: 1, color: '#1e293b', textClass: 'text-slate-500' };
     }
 
-    // --- ФУНКЦИЯ ОБНОВЛЕНИЯ СТАТУСА СЛОВАРЯ (ИСПРАВЛЕНИЕ ОШИБКИ) ---
+    // --- ФУНКЦИЯ ОБНОВЛЕНИЯ СТАТУСА СЛОВАРЯ ---
     function updateDictStatusText(text) {
       const el = document.getElementById('dictionaryStatus');
       if (el) {
@@ -662,6 +697,7 @@
     // --- ИНИЦИАЛИЗАЦИЯ И ОТРИСОВКА ---
     function renderBoard() {
       const container = document.getElementById('boardContainer');
+      if (!container) return;
       container.innerHTML = '';
 
       for (let r = 0; r < 15; r++) {
@@ -849,6 +885,7 @@
 
     function renderRackTiles() {
       const container = document.getElementById('rackTilesDisplay');
+      if (!container) return;
       container.innerHTML = '';
       
       if (gameState.rack.length === 0) {
@@ -899,7 +936,7 @@
         }
       });
 
-      // ВЫЧИТАЕМ УНИЧТОЖЕННЫЕ (СГОРЕВШИЕ) фишки игрока (Потребность №2)
+      // ВЫЧИТАЕМ УНИЧТОЖЕННЫЕ (СГОРЕВШИЕ) фишки игрока
       if (gameState.destroyed) {
         gameState.destroyed.forEach(letter => {
           if (currentBag[letter] && currentBag[letter] > 0) {
@@ -914,6 +951,7 @@
     function renderBag() {
       const bag = calculateRemainingBag();
       const container = document.getElementById('bagGrid');
+      if (!container) return;
       container.innerHTML = '';
 
       let totalLetters = 0;
@@ -940,18 +978,39 @@
         container.appendChild(cell);
       });
 
-      document.getElementById('bagTotalDisplay').textContent = `${totalLetters} / 104 шт.`;
+      const totalEl = document.getElementById('bagTotalDisplay');
+      if (totalEl) {
+        totalEl.textContent = `${totalLetters} / 104 шт.`;
+      }
+    }
+
+    // --- АВТОМАТИЧЕСКАЯ НАСТРОЙКА ОЧЕРЕДНОСТИ ХОДОВ ---
+    function updateDefaultManualPlayer() {
+      const select = document.getElementById('manualPlayer');
+      if (!select) return;
+
+      if (gameState.history.length === 0) {
+        // По умолчанию изначально соперник, чтобы реже переключать
+        select.value = 'opponent';
+      } else {
+        // Проверяем, кто ходил в прошлый раз
+        const lastMove = gameState.history[gameState.history.length - 1];
+        select.value = (lastMove.player === 'player') ? 'opponent' : 'player';
+      }
     }
 
     // --- РУЧНАЯ ЗАПИСЬ ХОДА ---
     function clearManualWord() {
       playSound('clear');
-      document.getElementById('manualWord').value = '';
-      document.getElementById('manualJokersContainer').innerHTML = '<span class="text-xs text-slate-500 italic">Сначала введите слово выше</span>';
+      const input = document.getElementById('manualWord');
+      if (input) input.value = '';
+      const jokersContainer = document.getElementById('manualJokersContainer');
+      if (jokersContainer) jokersContainer.innerHTML = '<span class="text-xs text-slate-500 italic">Сначала введите слово выше</span>';
     }
 
     function generateManualJokersCheckboxes(word) {
       const container = document.getElementById('manualJokersContainer');
+      if (!container) return;
       container.innerHTML = '';
 
       if (!word) {
@@ -1007,30 +1066,127 @@
         return;
       }
 
-      // Размещаем на доске
+      // Проверим на конфликты с существующими буквами
       const wordTilesToPlace = [];
+      const boardLettersNeed = [];
       for (let i = 0; i < word.length; i++) {
         const currR = dir === 'H' ? r : r + i;
         const currC = dir === 'H' ? c + i : c;
         const letter = word[i];
         const isJoker = jokers.includes(i);
+        const boardTile = gameState.board[currR][currC];
 
+        if (boardTile.letter && boardTile.letter !== letter) {
+          showToast(`Конфликт букв в клетке ${COL_LABELS[currC]}${currR+1}: на доске '${boardTile.letter}', вы ставите '${letter}'`, 'error');
+          return;
+        }
         wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker });
+        boardLettersNeed.push(boardTile.letter || null);
       }
 
-      // Проверим на конфликты с существующими буквами
-      for (const tile of wordTilesToPlace) {
-        const boardTile = gameState.board[tile.r][tile.c];
-        if (boardTile.letter && boardTile.letter !== tile.letter) {
-          showToast(`Конфликт букв в клетке ${COL_LABELS[tile.c]}${tile.r+1}: на доске '${boardTile.letter}', вы ставите '${tile.letter}'`, 'error');
+      const score = calculateSpecificMoveScore(wordTilesToPlace);
+
+      // --- ИНТЕЛЛЕКТУАЛЬНЫЙ АНАЛИЗ ОШИБОК ИГРОКА ---
+      let turnOrderIssue = false;
+      if (gameState.history.length > 0) {
+        const lastMove = gameState.history[gameState.history.length - 1];
+        if (lastMove.player === player) {
+          turnOrderIssue = true;
+        }
+      }
+
+      if (player === 'player') {
+        const testResult = canFormWord(word, boardLettersNeed, gameState.rack);
+        if (!testResult.possible || testResult.jokersRequired.length > 0) {
+          // Недостающие буквы
+          const tempRack = [...gameState.rack];
+          const missing = [];
+
+          for (let i = 0; i < word.length; i++) {
+            if (!boardLettersNeed[i]) {
+              const letter = word[i];
+              const rackIdx = tempRack.indexOf(letter);
+              if (rackIdx !== -1) {
+                tempRack.splice(rackIdx, 1);
+              } else {
+                const starIdx = tempRack.indexOf('*');
+                if (starIdx !== -1) {
+                  tempRack.splice(starIdx, 1);
+                } else {
+                  missing.push(letter);
+                }
+              }
+            }
+          }
+
+          // Показываем кастомное предупреждение вместо блокировки
+          openManualTurnWarningModal({
+            word, r, c, dir, jokers, score,
+            missingLetters: missing,
+            turnOrderIssue,
+            wordTilesToPlace,
+            rackIndicesUsed: testResult.rackIndicesUsed
+          });
+          return; // Прерываем до подтверждения в модальном окне
+        } else {
+          // Игрок имеет все буквы: запись хода со списанием фишек
+          executeApplyManualWordWithConsumption(player, word, r, c, dir, jokers, score, wordTilesToPlace, testResult.rackIndicesUsed);
           return;
         }
       }
 
-      // Рассчитываем очки для записываемого слова
-      const score = calculateSpecificMoveScore(wordTilesToPlace);
+      // Ход Соперника: применяется сразу (без списания фишек)
+      executeApplyManualWordWithConsumption(player, word, r, c, dir, jokers, score, wordTilesToPlace, []);
+    }
 
-      // Применяем изменения
+    function openManualTurnWarningModal(data) {
+      playSound('tap');
+      pendingManualMove = data;
+      document.getElementById('warningModalWord').textContent = data.word;
+      
+      const missingText = data.missingLetters.length > 0 ? data.missingLetters.join(', ') : 'Нет свободных фишек (требуется джокер)';
+      document.getElementById('warningModalMissing').textContent = missingText;
+
+      const orderAlert = document.getElementById('warningModalTurnOrder');
+      if (data.turnOrderIssue) {
+        orderAlert.classList.remove('hidden');
+      } else {
+        orderAlert.classList.add('hidden');
+      }
+
+      const msgEl = document.getElementById('warningModalMessage');
+      msgEl.innerHTML = `
+        Вы пытаетесь записать ход <strong>«${data.word}»</strong> за себя (Игрока), но на вашей подставке отсутствуют подходящие фишки.<br><br>
+        Возможно, вы забыли изменить игрока на <strong>«Соперник»</strong>? Алгоритм рекомендует переназначить ход.
+      `;
+
+      document.getElementById('manualTurnWarningModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeManualTurnWarningModal() {
+      document.getElementById('manualTurnWarningModal').classList.add('hidden');
+      pendingManualMove = null;
+    }
+
+    function resolveManualWarning(selectedPlayer) {
+      if (!pendingManualMove) return;
+      const { word, r, c, dir, jokers, score, wordTilesToPlace, rackIndicesUsed } = pendingManualMove;
+      
+      if (selectedPlayer === 'player') {
+        // Принудительно пишем на Игрока со списанием того, что совпало
+        executeApplyManualWordWithConsumption('player', word, r, c, dir, jokers, score, wordTilesToPlace, rackIndicesUsed || []);
+      } else {
+        // Записать за Соперника (без списания букв из руки)
+        executeApplyManualWordWithConsumption('opponent', word, r, c, dir, jokers, score, wordTilesToPlace, []);
+      }
+      closeManualTurnWarningModal();
+    }
+
+    function executeApplyManualWordWithConsumption(player, word, r, c, dir, jokers, score, wordTilesToPlace, rackIndicesUsed) {
+      const previousRack = [...gameState.rack];
+
+      // 1. Выкладываем фишки на доску
       wordTilesToPlace.forEach(tile => {
         gameState.board[tile.r][tile.c] = {
           letter: tile.letter,
@@ -1039,14 +1195,24 @@
         };
       });
 
-      // Обновляем счет игроков
+      // 2. Списываем фишки с руки если это был ход игрока и у него были эти фишки
+      if (player === 'player' && rackIndicesUsed.length > 0) {
+        const newRack = previousRack.filter((_, idx) => !rackIndicesUsed.includes(idx));
+        gameState.rack = newRack;
+        const rackString = newRack.join('');
+        document.getElementById('rackInput').value = rackString;
+        document.getElementById('rackCount').textContent = `${newRack.length} / 7 букв`;
+        renderRackTiles();
+      }
+
+      // 3. Начисляем очки
       if (player === 'player') {
         gameState.playerScore += score;
       } else {
         gameState.opponentScore += score;
       }
 
-      // Добавляем в историю
+      // 4. Записываем в историю
       gameState.history.push({
         player,
         word,
@@ -1055,27 +1221,27 @@
         dir,
         score,
         jokers,
-        destroyedTiles: [], // Ручные слова не уничтожают джокеров автоматически
-        previousRack: [...gameState.rack] // Запоминаем текущую руку для отката
+        destroyedTiles: [],
+        previousRack: previousRack
       });
 
       playSound('success');
-      showToast(`Слово «${word}» успешно добавлено на доску! Начислено: +${score} очков.`, 'success');
-      
-      // Очистка формы
+      showToast(`Слово «${word}» записано за ${player === 'player' ? 'Игрока' : 'Соперника'}! (+${score} очк.)`, 'success');
+
       clearManualWord();
       updateScoreboardDisplay();
       renderBoard();
       renderBag();
       updateHistoryDisplay();
+      
+      // Автоматическое переключение очередности ходов
+      updateDefaultManualPlayer();
       autoCalculateIfPossible();
     }
 
     function calculateSpecificMoveScore(tilesToPlace) {
       let total = 0;
       let wordMult = 1;
-
-      // Считаем сколько букв мы выставили "впервые" за этот ход (чтобы применить их множители)
       let newlyPlacedCount = 0;
 
       tilesToPlace.forEach(tile => {
@@ -1084,7 +1250,6 @@
         const mult = getCellMultiplier(tile.r, tile.c);
 
         if (!boardTile.letter) {
-          // Клетка была пуста, множители работают!
           newlyPlacedCount++;
           if (mult.type === 'x2_letter') {
             total += baseVal * 2;
@@ -1100,14 +1265,12 @@
             wordMult *= 3;
           }
         } else {
-          // Буква уже была на доске, множители не работают
           total += baseVal;
         }
       });
 
       total *= wordMult;
 
-      // Бонус за использование всех 7 букв с подставки
       if (newlyPlacedCount === 7) {
         total += 15;
       }
@@ -1122,6 +1285,7 @@
 
     function updateHistoryDisplay() {
       const container = document.getElementById('historyList');
+      if (!container) return;
       container.innerHTML = '';
 
       if (gameState.history.length === 0) {
@@ -1129,9 +1293,7 @@
         return;
       }
 
-      // Отрисовываем в обратном порядке (последние ходы сверху)
       [...gameState.history].reverse().forEach((item, idx) => {
-        const mainIdx = gameState.history.length - 1 - idx;
         const div = document.createElement('div');
         div.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800/80';
 
@@ -1234,7 +1396,7 @@
         }
       });
 
-      // ВОССТАНАВЛИВАЕМ РУКУ (ПОДСТАВКУ) РОКОВОЙ СВЕЖЕСТИ! (Восстановление руки "как и было")
+      // Восстанавливаем подставку в исходное состояние до этого хода
       if (lastMove.previousRack) {
         gameState.rack = [...lastMove.previousRack];
         const rackString = gameState.rack.join('');
@@ -1249,13 +1411,20 @@
       renderBag();
       updateHistoryDisplay();
       renderRackTiles();
+      updateDefaultManualPlayer();
       autoCalculateIfPossible();
     }
 
-    // --- ПЕРЕЗАПУСК ИГРЫ ЧЕРЕЗ CUSTOM MODAL (Без confirm) ---
+    // --- ПЕРЕЗАПУСК ИГРЫ ---
     function openResetModal() {
       playSound('tap');
-      document.getElementById('resetConfirmModal').classList.remove('hidden');
+      const el = document.getElementById('resetConfirmModal');
+      if (el) el.classList.remove('hidden');
+    }
+
+    function closeResetModal() {
+      const el = document.getElementById('resetConfirmModal');
+      if (el) el.classList.add('hidden');
     }
 
     // --- АВТОМАТИЧЕСКИЙ ЗАПУСК ПОИСКА ПРИ ИЗМЕНЕНИИ ДОСКИ ---
@@ -1265,7 +1434,7 @@
       }
     }
 
-    // Интеллектуальный поиск ходов по доске
+    // --- УЛЬТРАБЫСТРЫЙ АЛГОРИТМ ПОДБОРА СЛОВ И ОЦЕНКИ РИСКОВ ---
     function calculateSuggestions() {
       if (gameState.rack.length === 0) {
         showToast('Пожалуйста, введите буквы с вашей подставки!', 'error');
@@ -1296,7 +1465,6 @@
           for (let c = 0; c < 15; c++) {
             if (gameState.board[r][c].letter) continue;
             
-            // Проверка соседей
             const hasNeighbor = 
               (r > 0 && gameState.board[r-1][c].letter !== '') ||
               (r < 14 && gameState.board[r+1][c].letter !== '') ||
@@ -1310,15 +1478,75 @@
         }
       }
 
-      // Перебор словаря
-      DICTIONARY.forEach(word => {
-        if (word.length < 2) return;
+      // --- ПРЕ-ФИЛЬТРАЦИЯ СЛОВАРЯ ДЛЯ БЫСТРОДЕЙСТВИЯ ---
+      const potentialWords = [];
+      const rackLetters = gameState.rack.filter(l => l !== '*');
+      const rackJokersCount = gameState.rack.filter(l => l === '*').length;
+      const maxMissingLetters = rackJokersCount + 2; // мы можем докупить до 2 джокеров
 
-        // Для каждого слова пробуем его разместить в горизонтальном и вертикальном направлении
-        anchorPoints.forEach(anchor => {
-          // Будем пробовать размещать слово так, чтобы его i-я буква накрывала anchor
+      const rackFreq = {};
+      for (const l of rackLetters) {
+        rackFreq[l] = (rackFreq[l] || 0) + 1;
+      }
+
+      const boardLettersFreq = {};
+      let boardHasLetters = false;
+      for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+          const l = gameState.board[r][c].letter;
+          if (l) {
+            boardLettersFreq[l] = (boardLettersFreq[l] || 0) + 1;
+            boardHasLetters = true;
+          }
+        }
+      }
+
+      // Пробегаемся по словарю ОДИН РАЗ и отсеиваем 99% заведомо неподходящих слов
+      DICTIONARY.forEach(word => {
+        if (word.length < 2 || word.length > 15) return;
+
+        // Если доска не пуста, слово обязано иметь хотя бы одну общую букву с доской
+        if (boardHasLetters) {
+          let hasOverlap = false;
           for (let i = 0; i < word.length; i++) {
-            
+            if (boardLettersFreq[word[i]]) {
+              hasOverlap = true;
+              break;
+            }
+          }
+          if (!hasOverlap) return;
+        }
+
+        // Подсчитываем нехватку букв с учетом имеющихся на руках и теоретически возможных на доске
+        const wordFreq = {};
+        for (let i = 0; i < word.length; i++) {
+          const l = word[i];
+          wordFreq[l] = (wordFreq[l] || 0) + 1;
+        }
+
+        let missingLettersCount = 0;
+        for (const l in wordFreq) {
+          const needed = wordFreq[l];
+          const onRack = rackFreq[l] || 0;
+          const onBoard = boardLettersFreq[l] || 0;
+          
+          if (needed > onRack) {
+            const shortage = needed - onRack;
+            const coveredByBoard = Math.min(shortage, onBoard);
+            const remainingShortage = shortage - coveredByBoard;
+            missingLettersCount += remainingShortage;
+          }
+        }
+
+        if (missingLettersCount <= maxMissingLetters) {
+          potentialWords.push(word);
+        }
+      });
+
+      // Перебор только отфильтрованных слов
+      potentialWords.forEach(word => {
+        anchorPoints.forEach(anchor => {
+          for (let i = 0; i < word.length; i++) {
             // 1. Попытка ГОРИЗОНТАЛЬНОГО размещения
             const startH_C = anchor.c - i;
             if (startH_C >= 0 && startH_C + word.length <= 15) {
@@ -1348,24 +1576,21 @@
       // Сортировка по итоговым очкам
       uniqueCandidates.sort((a, b) => b.score - a.score);
 
-      // Сохраняем во временную переменную для фильтрации
-      gameState.lastCalculatedSuggestions = uniqueCandidates;
+      // Сохраняем топ-100 лучших результатов для предотвращения DOM лага
+      gameState.lastCalculatedSuggestions = uniqueCandidates.slice(0, 100);
 
       renderSuggestions();
       playSound('success');
     }
 
-    // Поиск вариантов достройки слова соперником (анализ угроз)
     function analyzeExtensionRisks(word, r, c, dir) {
       const risks = [];
       
-      // Ищем в словаре слова, которые содержат наше слово как строгое подмножество
       DICTIONARY.forEach(dictWord => {
         if (dictWord === word || dictWord.length <= word.length) return;
         
         const idx = dictWord.indexOf(word);
         if (idx !== -1) {
-          // Наше слово может быть достроена спереди или сзади
           const prefix = dictWord.slice(0, idx);
           const suffix = dictWord.slice(idx + word.length);
           
@@ -1381,7 +1606,7 @@
                 break;
               }
               if (gameState.board[testR][testC].letter) {
-                isPhysicallyPossible = false; // Клетка занята другой фишкой
+                isPhysicallyPossible = false;
                 break;
               }
             }
@@ -1415,12 +1640,10 @@
         }
       });
 
-      return risks.sort((a, b) => b.scoreImpact - a.scoreImpact).slice(0, 2); // Возвращаем топ-2 самые опасные угрозы
+      return risks.sort((a, b) => b.scoreImpact - a.scoreImpact).slice(0, 2);
     }
 
-    // Приблизительный расчет сколько очков получит соперник, если достроит наше слово
     function calculatePotentialOpponentPoints(dictWord, prefix, suffix, r, c, dir, matchIdx) {
-      // Начальная координата слова соперника на доске
       const startR = dir === 'H' ? r : r - prefix.length;
       const startC = dir === 'H' ? c - prefix.length : c;
 
@@ -1431,7 +1654,6 @@
         const currR = dir === 'H' ? startR : startR + i;
         const currC = dir === 'H' ? startC + i : startC;
 
-        // Если клетка уже имеет букву (наша старая буква), ее множители не работают
         const isAlreadyOnBoard = (i >= matchIdx && i < matchIdx + dictWord.length - prefix.length - suffix.length);
         const letterVal = LETTER_POINTS[dictWord[i]] || 1;
         const mult = getCellMultiplier(currR, currC);
@@ -1439,7 +1661,6 @@
         if (isAlreadyOnBoard) {
           score += letterVal;
         } else {
-          // Это новые буквы достройки соперника, к ним применяются множители
           if (mult.type === 'x2_letter') score += letterVal * 2;
           else if (mult.type === 'x3_letter') score += letterVal * 3;
           else score += letterVal;
@@ -1450,10 +1671,6 @@
       }
 
       return score * wordMult;
-    }
-
-    function closeResetModal() {
-      document.getElementById('resetConfirmModal').classList.add('hidden');
     }
 
     function executeResetGame() {
@@ -1483,6 +1700,7 @@
       renderBag();
       updateHistoryDisplay();
       renderRackTiles();
+      updateDefaultManualPlayer();
 
       document.getElementById('suggestionsList').innerHTML = `
         <div class="text-center py-12 text-slate-500">
@@ -1545,7 +1763,7 @@
             result.possible = false;
             return result;
           }
-          continue; // Берем готовую с доски, руку не тратим
+          continue; // Буква на доске, рука не задействуется
         }
 
         // 1. Пробуем найти точное совпадение на руке
@@ -1576,7 +1794,7 @@
             result.rackIndicesUsed.push(jokerIdx);
             result.jokersUsedFromRack.push({ letter: needLetter, pos: i });
           } else {
-            // 3. Если букв и джокеров на руке не хватает, значит требуется покупка джокера
+            // 3. Требуется покупка джокера
             result.jokersRequired.push({ letter: needLetter, pos: i });
           }
         }
@@ -1709,7 +1927,7 @@
       });
     }
 
-    // Изменение и фильтрация выводимых ходов (Потребность №1)
+    // Изменение и фильтрация выводимых ходов
     function setSuggestionsFilter(filterType) {
       playSound('tap');
       gameState.suggestionsFilter = filterType;
@@ -1730,6 +1948,7 @@
 
     function renderSuggestions() {
       const container = document.getElementById('suggestionsList');
+      if (!container) return;
       container.innerHTML = '';
       
       const candidates = gameState.lastCalculatedSuggestions || [];
@@ -1837,7 +2056,6 @@
           jokersLine.innerHTML = innerHTML;
           div.appendChild(jokersLine);
         } else if (cand.jokersUsedFromRack && cand.jokersUsedFromRack.length > 0) {
-          // Если нет купленных джокеров, но используется обычный джокер с подставки
           const jokersLine = document.createElement('div');
           jokersLine.className = 'mt-2 flex items-center space-x-1.5 text-[10px] text-amber-400 bg-slate-900 border border-amber-900/20 px-2.5 py-1.5 rounded-lg w-max';
           const handJokersText = cand.jokersUsedFromRack.map(j => `«${j.letter}»`).join(', ');
@@ -1933,6 +2151,7 @@
 
       // Строим контейнер фишек
       const container = document.getElementById('sacrificeTilesContainer');
+      if (!container) return;
       container.innerHTML = '';
 
       // Проверяем, хватает ли вообще свободных (лишних) фишек для сжигания
@@ -1980,12 +2199,10 @@
       const foundIdx = selectedSacrificeIndices.indexOf(idx);
       
       if (foundIdx !== -1) {
-        // Убираем выбор
         selectedSacrificeIndices.splice(foundIdx, 1);
         element.classList.remove('border-red-500', 'ring-2', 'ring-red-500/80');
         element.classList.add('border-amber-600/40');
       } else {
-        // Добавляем выбор
         if (selectedSacrificeIndices.length < pendingCandidate.requireJokers) {
           selectedSacrificeIndices.push(idx);
           element.classList.remove('border-amber-600/40');
@@ -2009,10 +2226,9 @@
     function executeSacrificeAndPlay() {
       if (!pendingCandidate || selectedSacrificeIndices.length !== pendingCandidate.requireJokers) return;
 
-      // Считываем уничтожаемые буквы на основе выбранных индексов
       const sacrificedLetters = selectedSacrificeIndices.map(idx => gameState.rack[idx]);
+      gameState.destroyed.push(...sacrificedLetters);
 
-      // Делаем ход с передачей индексов сжигания фишек
       playSound('coin');
       showToast(`Уничтожено фишек: ${sacrificedLetters.join(', ')}. Они навсегда исключены из мешка!`, 'success');
       
@@ -2025,10 +2241,10 @@
       const { word, r, c, dir, score, jokersRequiredList } = cand;
       const jokers = jokersRequiredList.map(j => j.pos);
 
-      // 1. Сохраняем исходное состояние руки для истории (Снятие копии руки для отката)
+      // 1. Сохраняем исходное состояние руки для истории
       const originalRack = [...gameState.rack];
 
-      // 2. Выкладываем буквы на доску
+      // 2. Выкладываем фишки на доску
       const wordTilesToPlace = [];
       for (let i = 0; i < word.length; i++) {
         const currR = dir === 'H' ? r : r + i;
@@ -2054,7 +2270,7 @@
       gameState.rack = newRack;
       const rackString = newRack.join('');
       document.getElementById('rackInput').value = rackString;
-      document.getElementById('rackCount').textContent = `${gameState.rack.length} / 7 букв`;
+      document.getElementById('rackCount').textContent = `${newRack.length} / 7 букв`;
 
       // 5. Пополняем массив сгоревших фишек
       if (sacrificedLetters.length > 0) {
@@ -2075,7 +2291,7 @@
         score,
         jokers,
         destroyedTiles: sacrificedLetters,
-        previousRack: originalRack // Сохраняем полный слепок руки
+        previousRack: originalRack // Сохраняем слепок руки
       });
 
       playSound('success');
@@ -2085,6 +2301,7 @@
       renderBag();
       updateHistoryDisplay();
       renderRackTiles();
+      updateDefaultManualPlayer();
       
       // Очищаем список рекомендаций
       document.getElementById('suggestionsList').innerHTML = `
@@ -2099,18 +2316,16 @@
     // --- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ПАНЕЛИ УПРАВЛЕНИЯ ---
     function switchTab(tabId) {
       playSound('tap');
-      
-      // Скрываем все вкладки
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      // Деактивируем кнопки
       document.querySelectorAll('[id^="tabBtn-"]').forEach(btn => {
         btn.className = 'flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200';
       });
 
-      // Показываем активную вкладку
-      document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
-      // Активируем кнопку
-      document.getElementById(`tabBtn-${tabId}`).className = 'flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 bg-indigo-600 text-white';
+      const content = document.getElementById(`tabContent-${tabId}`);
+      if (content) content.classList.remove('hidden');
+
+      const btn = document.getElementById(`tabBtn-${tabId}`);
+      if (btn) btn.className = 'flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-200 bg-indigo-600 text-white';
 
       gameState.activeTab = tabId;
     }
@@ -2118,7 +2333,8 @@
     // --- ОБРАБОТКА ПОЛЬЗОВАТЕЛЬСКОГО СЛОВАРЯ ---
     function triggerFileInput() {
       playSound('tap');
-      document.getElementById('dictFileInput').click();
+      const fileInput = document.getElementById('dictFileInput');
+      if (fileInput) fileInput.click();
     }
 
     function handleDictUpload(event) {
@@ -2150,6 +2366,7 @@
     // --- СИСТЕМА УВЕДОМЛЕНИЙ (TOAST) ---
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
+      if (!container) return;
       const toast = document.createElement('div');
       
       let borderClass = 'border-slate-800 bg-slate-900';
@@ -2185,7 +2402,7 @@
     function toggleRulesModal() {
       playSound('tap');
       const modal = document.getElementById('rulesModal');
-      modal.classList.toggle('hidden');
+      if (modal) modal.classList.toggle('hidden');
     }
 
     // --- ПЕРВИЧНАЯ ЗАГРУЗКА И ИНИЦИАЛИЗАЦИЯ ---
@@ -2199,14 +2416,19 @@
 
       // Заполняем выбор столбцов для ручной записи
       const manualColSelect = document.getElementById('manualCol');
-      manualColSelect.innerHTML = '';
-      COL_LABELS.forEach((label, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = label;
-        if (idx === 7) opt.selected = true;
-        manualColSelect.appendChild(opt);
-      });
+      if (manualColSelect) {
+        manualColSelect.innerHTML = '';
+        COL_LABELS.forEach((label, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = label;
+          if (idx === 7) opt.selected = true;
+          manualColSelect.appendChild(opt);
+        });
+      }
+
+      // Настройка дефолтного игрока ручной записи
+      updateDefaultManualPlayer();
 
       // Ограничим ввод только русскими буквами в ручном вводе
       const manualWordInput = document.getElementById('manualWord');
