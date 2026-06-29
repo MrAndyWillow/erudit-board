@@ -60,7 +60,6 @@
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white overflow-x-hidden">
-
   <!-- Навигационная панель -->
   <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
     <div class="flex items-center space-x-3">
@@ -140,8 +139,7 @@
         <i class="inline-block text-amber-500 font-bold">Подсказка:</i> Кликните на любую клетку на доске, чтобы быстро вписать/изменить букву вручную или пометить её как джокер.
       </div>
     </section>
-
-    <!-- Правая колонка: Панели Управления -->
+    <!-- Правая колонка: Панели Управления и Расчетов -->
     <section class="xl:col-span-5 flex flex-col space-y-6">
       
       <!-- Панель статуса и очков игроков -->
@@ -160,7 +158,7 @@
         </div>
       </div>
 
-      <!-- Ввод фишек игрока -->
+      <!-- Ввод фишек игрока (Текущая рука) -->
       <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-2">
@@ -236,7 +234,6 @@
           </div>
         </div>
       </div>
-
       <!-- ВКЛАДКА 2: Записать ход вручную -->
       <div id="tabContent-manual" class="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 tab-content hidden">
         <h4 class="font-bold text-slate-200 text-sm pb-2 border-b border-slate-800">Зарегистрировать ход вручную</h4>
@@ -300,7 +297,7 @@
             <h4 class="font-bold text-slate-200 text-sm">Остаток букв в мешке</h4>
             <p class="text-[10px] text-slate-400">Авторасчет по формуле: Исходный набор - Доска - Рука - Сгоревшие</p>
           </div>
-          <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-semibold" id="bagTotalDisplay">97 / 104</span>
+          <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-semibold" id="bagTotalDisplay">104 / 104</span>
         </div>
         <div id="bagGrid" class="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-[300px] overflow-y-auto pr-1"></div>
       </div>
@@ -325,9 +322,7 @@
   <!-- Интерактивная модалка редактирования клетки -->
   <div id="cellEditModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full mx-4 shadow-2xl relative">
-      <button onclick="closeCellModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
+      <button onclick="closeCellModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
       <h3 class="text-lg font-bold text-slate-200 mb-2 flex items-center">
         <i data-lucide="edit-3" class="w-5 h-5 text-indigo-400 mr-2"></i>
         <span>Редактировать клетку <span id="modalCellCoord" class="text-amber-400">A1</span></span>
@@ -454,15 +449,21 @@
   <!-- Модальное окно правил игры -->
   <div id="rulesModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-2xl w-full mx-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
-      <button onclick="toggleRulesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
+      <button onclick="toggleRulesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
       <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center border-b border-slate-800 pb-2">
         <i data-lucide="book-open" class="w-5 h-5 text-amber-400 mr-2"></i>
-        <span>Правила игры Эрудит</span>
+        <span>Правила игры Эрудит и Множители</span>
       </h3>
       <div class="space-y-4 text-xs leading-relaxed text-slate-300">
-        <p>Стандартные правила игры.</p>
+        <p class="font-semibold text-slate-200">Цветные клетки на поле дают дополнительные очки за выкладываемые слова:</p>
+        <ul class="space-y-2 pl-4 list-disc">
+          <li><span class="text-emerald-400 font-bold">x2 буква (зеленый)</span> — количество очков буквы умножается на <span class="underline">два</span>.</li>
+          <li><span class="text-sky-400 font-bold">x3 буква (голубой)</span> — количество очков буквы умножается на <span class="underline text-sky-400">три</span>.</li>
+          <li><span class="text-amber-400 font-bold">x2 слово (оранжевый)</span> — количество очков всего слова умножается на <span class="underline">два</span>.</li>
+          <li><span class="text-red-400 font-bold">x3 слово (красный)</span> — количество очков всего слова умножается на <span class="underline">три</span>.</li>
+        </ul>
+        <p>Если слово одновременно накрывает множители буквы и слова, то сначала рассчитывается итоговый вес каждой буквы (с учетом ее множителей), затем они складываются, и итоговая сумма умножается на множитель слова.</p>
+        <p class="bg-indigo-950/30 border border-indigo-900/50 p-2.5 rounded-lg"><span class="text-indigo-400 font-bold">Бонус за 7 букв:</span> Если за ход игрок использовал все семь букв со своей подставки, ему начисляются дополнительные <span class="text-indigo-300 font-bold">15 очков</span>.</p>
       </div>
     </div>
   </div>
@@ -474,153 +475,87 @@
   <script>
     const COL_LABELS = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К', 'Л', 'М', 'Н', 'О', 'П'];
     const LETTER_POINTS = {
-      'А': 1, 'И': 1, 'Н': 1, 'О': 1,
-      'В': 2, 'Г': 2, 'Е': 2, 'К': 2, 'Л': 2, 'М': 2, 'П': 2, 'Р': 2, 'С': 2, 'Т': 2,
-      'Б': 3, 'Д': 3, 'У': 3, 'Я': 3,
-      'Ж': 5, 'З': 5, 'Й': 5, 'Х': 5, 'Ч': 5, 'Ы': 5, 'Ь': 5,
-      'Ф': 8, 'Ц': 8, 'Ш': 8, 'Щ': 8, 'Ю': 8,
+      'А': 1, 'И': 1, 'Н': 1, 'О': 1, 'В': 2, 'Г': 2, 'Е': 2, 'К': 2, 'Л': 2, 'М': 2, 'П': 2, 'Р': 2, 'С': 2, 'Т': 2,
+      'Б': 3, 'Д': 3, 'У': 3, 'Я': 3, 'Ж': 5, 'З': 5, 'Й': 5, 'Х': 5, 'Ч': 5, 'Ы': 5, 'Ь': 5, 'Ф': 8, 'Ц': 8, 'Ш': 8, 'Щ': 8, 'Ю': 8,
       'Э': 10, 'Ъ': 15, '*': 0
     };
     const INITIAL_BAG = {
-      'А': 10, 'Б': 3, 'В': 5, 'Г': 3, 'Д': 5, 'Е': 9, 'Ж': 1, 'З': 2, 'И': 9, 'Й': 2,
-      'К': 6, 'Л': 5, 'М': 4, 'Н': 8, 'О': 10, 'П': 5, 'Р': 6, 'С': 6, 'Т': 6, 'У': 3,
-      'Ф': 1, 'Х': 1, 'Ц': 1, 'Ч': 2, 'Ш': 1, 'Щ': 1, 'Ъ': 1, 'Ы': 1, 'Ь': 2, 'Э': 1,
-      'Ю': 1, 'Я': 2, '*': 4
+      'А': 10, 'Б': 3, 'В': 5, 'Г': 3, 'Д': 5, 'Е': 9, 'Ж': 1, 'З': 2, 'И': 9, 'Й': 2, 'К': 6, 'Л': 5, 'М': 4, 'Н': 8, 'О': 10, 'П': 5, 'Р': 6, 'С': 6, 'Т': 6, 'У': 3,
+      'Ф': 1, 'Х': 1, 'Ц': 1, 'Ч': 2, 'Ш': 1, 'Щ': 1, 'Ъ': 1, 'Ы': 1, 'Ь': 2, 'Э': 1, 'Ю': 1, 'Я': 2, '*': 4
     };
 
     let gameState = {
       board: Array(15).fill(null).map(() => Array(15).fill(null).map(() => ({ letter: '', isJoker: false, isNew: false }))),
-      playerScore: 0,
-      opponentScore: 0,
-      rack: [],
-      destroyed: [],
-      history: [],
-      activeTab: 'suggestions',
-      suggestionsFilter: 'all',
-      lastCalculatedSuggestions: [],
-      boardType: 'classic'
+      playerScore: 0, opponentScore: 0, rack: [], destroyed: [], history: [], activeTab: 'suggestions', suggestionsFilter: 'all', lastCalculatedSuggestions: [], boardType: 'classic'
     };
 
     let pendingManualMove = null;
     let genericConfirmAction = null;
+    let pendingCandidate = null;
+    let selectedSacrificeIndices = [];
+    
     const DICTIONARY = new Set();
-    const BUILTIN_WORDS = ["АРБУЗ", "СЛОН", "ЗАСЛОНКА"]; // Сокращен для примера, полная версия будет работать с файла
+    const BUILTIN_WORDS = ["АРБУЗ", "СЛОН", "ЗАСЛОНКА", "ЗАСЛОН", "СЛОНИК"];
 
     // --- AUDIO & UI ---
     let audioCtx = null;
-    function initAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
     function playSound(type) {
       try {
-        initAudio();
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        initAudio(); if (!audioCtx) return;
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
         const now = audioCtx.currentTime;
-
-        if (type === 'success') {
-          osc.frequency.setValueAtTime(523.25, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
-          gain.gain.setValueAtTime(0.12, now);
-          gain.gain.linearRampToValueAtTime(0, now + 0.25);
-          osc.start(now); osc.stop(now + 0.25);
-        } else if (type === 'coin') {
-          osc.frequency.setValueAtTime(987.77, now);
-          osc.frequency.setValueAtTime(1318.51, now + 0.08);
-          gain.gain.setValueAtTime(0.12, now);
-          gain.gain.linearRampToValueAtTime(0, now + 0.35);
-          osc.start(now); osc.stop(now + 0.35);
-        } else if (type === 'tap') {
-          osc.frequency.setValueAtTime(160, now);
-          osc.frequency.exponentialRampToValueAtTime(40, now + 0.04);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.linearRampToValueAtTime(0, now + 0.04);
-          osc.start(now); osc.stop(now + 0.04);
-        } else if (type === 'clear') {
-          osc.frequency.setValueAtTime(320, now);
-          osc.frequency.exponentialRampToValueAtTime(90, now + 0.18);
-          gain.gain.setValueAtTime(0.1, now);
-          gain.gain.linearRampToValueAtTime(0, now + 0.18);
-          osc.start(now); osc.stop(now + 0.18);
-        }
+        if (type === 'success') { osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); gain.gain.setValueAtTime(0.12, now); gain.gain.linearRampToValueAtTime(0, now + 0.25); osc.start(now); osc.stop(now + 0.25); }
+        else if (type === 'coin') { osc.frequency.setValueAtTime(987.77, now); osc.frequency.setValueAtTime(1318.51, now + 0.08); gain.gain.setValueAtTime(0.12, now); gain.gain.linearRampToValueAtTime(0, now + 0.35); osc.start(now); osc.stop(now + 0.35); }
+        else if (type === 'tap') { osc.frequency.setValueAtTime(160, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.04); gain.gain.setValueAtTime(0.15, now); gain.gain.linearRampToValueAtTime(0, now + 0.04); osc.start(now); osc.stop(now + 0.04); }
+        else if (type === 'clear') { osc.frequency.setValueAtTime(320, now); osc.frequency.exponentialRampToValueAtTime(90, now + 0.18); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.18); osc.start(now); osc.stop(now + 0.18); }
       } catch (e) {}
     }
 
     function showToast(message, type = 'info') {
-      const container = document.getElementById('toastContainer');
-      if (!container) return;
+      const container = document.getElementById('toastContainer'); if (!container) return;
       const toast = document.createElement('div');
-      let borderClass = 'border-slate-800 bg-slate-900';
-      let icon = '<i data-lucide="info" class="w-4 h-4 text-sky-400"></i>';
-      if (type === 'success') {
-        borderClass = 'border-emerald-800/80 bg-emerald-950/40 backdrop-blur';
-        icon = '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>';
-      } else if (type === 'error') {
-        borderClass = 'border-red-800/80 bg-red-950/40 backdrop-blur';
-        icon = '<i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i>';
-      }
+      let borderClass = type === 'success' ? 'border-emerald-800 bg-emerald-950/80' : type === 'error' ? 'border-red-800 bg-red-950/40 backdrop-blur' : 'border-slate-800 bg-slate-900';
+      let icon = type === 'success' ? '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>' : type === 'error' ? '<i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i>' : '<i data-lucide="info" class="w-4 h-4 text-sky-400"></i>';
       toast.className = `flex items-center space-x-3 px-4 py-3 rounded-xl border text-xs text-slate-100 shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 ${borderClass}`;
       toast.innerHTML = `${icon}<span>${message}</span>`;
-      container.appendChild(toast);
-      lucide.createIcons();
+      container.appendChild(toast); lucide.createIcons();
       setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
       setTimeout(() => { toast.classList.add('translate-y-2', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 4000);
     }
 
-    function updateDictStatusText(text) {
-      const el = document.getElementById('dictionaryStatus');
-      if (el) el.textContent = text;
-    }
+    function updateDictStatusText(text) { const el = document.getElementById('dictionaryStatus'); if (el) el.textContent = text; }
 
     // --- BOARD MULTIPLIERS ---
     function getCellMultiplier(r, c) {
-      const boardType = gameState.boardType || 'classic';
-      if (r === 7 && c === 7) return { type: 'center', label: '★', val: 1, color: '#475569', textClass: 'text-slate-200' };
+      if (r === 7 && c === 7) return { type: 'center', label: '★', val: 1, textClass: 'text-slate-200' };
       
-      if (boardType === 'classic') {
-        const redCells = [[0,0], [0,7], [0,14], [7,0], [7,14], [14,0], [14,7], [14,14]];
-        if (redCells.some(([y, x]) => y === r && x === c)) return { type: 'x3_word', label: 'x3 сло.', val: 3, textClass: 'text-red-400 font-extrabold' };
-        const orangeCells = [[1,5], [1,9], [5,1], [5,13], [9,1], [9,13], [13,5], [13,9]];
-        if (orangeCells.some(([y, x]) => y === r && x === c)) return { type: 'x2_word', label: 'x2 сло.', val: 2, textClass: 'text-orange-400 font-extrabold' };
-        const blueCells = [[1,1], [2,2], [3,3], [4,4], [10,10], [11,11], [12,12], [13,13], [1,13], [2,12], [3,11], [4,10], [10,4], [11,3], [12,2], [13,1]];
-        if (blueCells.some(([y, x]) => y === r && x === c)) return { type: 'x3_letter', label: 'x3 бук.', val: 3, textClass: 'text-sky-400 font-extrabold' };
-        const greenCells = [[0,3], [0,11], [2,6], [2,8], [3,0], [3,7], [3,14], [6,2], [6,6], [6,8], [6,12], [7,3], [7,11], [8,2], [8,6], [8,8], [8,12], [11,0], [11,7], [11,14], [12,6], [12,8], [14,3], [14,11]];
-        if (greenCells.some(([y, x]) => y === r && x === c)) return { type: 'x2_letter', label: 'x2 бук.', val: 2, textClass: 'text-emerald-400 font-extrabold' };
+      if (gameState.boardType === 'classic') {
+        if ([[0,0], [0,7], [0,14], [7,0], [7,14], [14,0], [14,7], [14,14]].some(([y, x]) => y === r && x === c)) return { type: 'x3_word', label: 'x3 сло.', val: 3, textClass: 'text-red-400 font-extrabold' };
+        if ([[1,5], [1,9], [5,1], [5,13], [9,1], [9,13], [13,5], [13,9]].some(([y, x]) => y === r && x === c)) return { type: 'x2_word', label: 'x2 сло.', val: 2, textClass: 'text-orange-400 font-extrabold' };
+        if ([[1,1], [2,2], [3,3], [4,4], [10,10], [11,11], [12,12], [13,13], [1,13], [2,12], [3,11], [4,10], [10,4], [11,3], [12,2], [13,1]].some(([y, x]) => y === r && x === c)) return { type: 'x3_letter', label: 'x3 бук.', val: 3, textClass: 'text-sky-400 font-extrabold' };
+        if ([[0,3], [0,11], [2,6], [2,8], [3,0], [3,7], [3,14], [6,2], [6,6], [6,8], [6,12], [7,3], [7,11], [8,2], [8,6], [8,8], [8,12], [11,0], [11,7], [11,14], [12,6], [12,8], [14,3], [14,11]].some(([y, x]) => y === r && x === c)) return { type: 'x2_letter', label: 'x2 бук.', val: 2, textClass: 'text-emerald-400 font-extrabold' };
       } else {
-        // ALTERNATIVE
-        const redCells = [[0, 3], [0, 11], [3, 0], [3, 14], [11, 0], [11, 14], [14, 3], [14, 11]];
-        if (redCells.some(([y, x]) => y === r && x === c)) return { type: 'x3_word', label: 'x3 сло.', val: 3, textClass: 'text-red-400 font-extrabold' };
-        const orangeCells = [[1, 5], [1, 9], [3, 7], [5, 1], [5, 13], [7, 3], [7, 11], [9, 1], [9, 13], [11, 7], [13, 5], [13, 9]];
-        if (orangeCells.some(([y, x]) => y === r && x === c)) return { type: 'x2_word', label: 'x2 сло.', val: 2, textClass: 'text-orange-400 font-extrabold' };
-        const blueCells = [[0, 6], [0, 8], [3, 3], [3, 11], [5, 5], [5, 9], [6, 0], [6, 14], [8, 0], [8, 14], [9, 5], [9, 9], [11, 3], [11, 11], [14, 6], [14, 8]];
-        if (blueCells.some(([y, x]) => y === r && x === c)) return { type: 'x3_letter', label: 'x3 бук.', val: 3, textClass: 'text-sky-400 font-extrabold' };
-        const greenCells = [[1, 2], [1, 12], [2, 1], [2, 4], [2, 10], [2, 13], [4, 2], [4, 6], [4, 8], [4, 12], [6, 4], [6, 10], [8, 4], [8, 10], [10, 2], [10, 6], [10, 8], [10, 12], [12, 1], [12, 4], [12, 10], [12, 13], [13, 2], [13, 12]];
-        if (greenCells.some(([y, x]) => y === r && x === c)) return { type: 'x2_letter', label: 'x2 бук.', val: 2, textClass: 'text-emerald-400 font-extrabold' };
+        // АЛЬТЕРНАТИВНАЯ ДОСКА
+        if ([[0, 3], [0, 11], [3, 0], [3, 14], [11, 0], [11, 14], [14, 3], [14, 11]].some(([y, x]) => y === r && x === c)) return { type: 'x3_word', label: 'x3 сло.', val: 3, textClass: 'text-red-400 font-extrabold' };
+        if ([[1, 5], [1, 9], [3, 7], [5, 1], [5, 13], [7, 3], [7, 11], [9, 1], [9, 13], [11, 7], [13, 5], [13, 9]].some(([y, x]) => y === r && x === c)) return { type: 'x2_word', label: 'x2 сло.', val: 2, textClass: 'text-orange-400 font-extrabold' };
+        if ([[0, 6], [0, 8], [3, 3], [3, 11], [5, 5], [5, 9], [6, 0], [6, 14], [8, 0], [8, 14], [9, 5], [9, 9], [11, 3], [11, 11], [14, 6], [14, 8]].some(([y, x]) => y === r && x === c)) return { type: 'x3_letter', label: 'x3 бук.', val: 3, textClass: 'text-sky-400 font-extrabold' };
+        if ([[1, 2], [1, 12], [2, 1], [2, 4], [2, 10], [2, 13], [4, 2], [4, 6], [4, 8], [4, 12], [6, 4], [6, 10], [8, 4], [8, 10], [10, 2], [10, 6], [10, 8], [10, 12], [12, 1], [12, 4], [12, 10], [12, 13], [13, 2], [13, 12]].some(([y, x]) => y === r && x === c)) return { type: 'x2_letter', label: 'x2 бук.', val: 2, textClass: 'text-emerald-400 font-extrabold' };
       }
       return { type: 'normal', label: '', val: 1, textClass: 'text-slate-500' };
     }
 
     // --- BOARD RENDER ---
     function renderBoard() {
-      const container = document.getElementById('boardContainer');
-      if (!container) return;
-      container.innerHTML = '';
+      const container = document.getElementById('boardContainer'); if (!container) return; container.innerHTML = '';
       for (let r = 0; r < 15; r++) {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'board-grid-row';
-        const rowLabel = document.createElement('div');
-        rowLabel.className = 'w-6 text-right pr-2 text-[10px] font-extrabold text-slate-500';
-        rowLabel.textContent = r + 1;
-        rowDiv.appendChild(rowLabel);
+        const rowDiv = document.createElement('div'); rowDiv.className = 'board-grid-row';
+        const rowLabel = document.createElement('div'); rowLabel.className = 'w-6 text-right pr-2 text-[10px] font-extrabold text-slate-500'; rowLabel.textContent = r + 1; rowDiv.appendChild(rowLabel);
 
         for (let c = 0; c < 15; c++) {
-          const cellData = gameState.board[r][c];
-          const mult = getCellMultiplier(r, c);
-          const cellBtn = document.createElement('button');
-          cellBtn.className = 'board-cell-btn';
+          const cellData = gameState.board[r][c]; const mult = getCellMultiplier(r, c);
+          const cellBtn = document.createElement('button'); cellBtn.className = 'board-cell-btn';
           
           if (mult.type === 'center') cellBtn.className += ' bg-slate-800 border border-slate-700 hover:bg-slate-700';
           else if (mult.type === 'x3_word') cellBtn.className += ' bg-red-950/40 border border-red-800 hover:bg-red-900/60';
@@ -631,69 +566,47 @@
 
           if (cellData.letter) {
             cellBtn.className += ' z-10';
-            const tileDiv = document.createElement('div');
-            tileDiv.className = 'absolute inset-[2px] rounded-lg wood-tile flex flex-col items-center justify-center border-2';
+            const tileDiv = document.createElement('div'); tileDiv.className = 'absolute inset-[2px] rounded-lg wood-tile flex flex-col items-center justify-center border-2';
             if (mult.type === 'x3_word') tileDiv.className += ' border-red-500/80 glow-red';
             else if (mult.type === 'x2_word') tileDiv.className += ' border-orange-500/80 glow-orange';
             else if (mult.type === 'x3_letter') tileDiv.className += ' border-sky-500/80 glow-blue';
             else if (mult.type === 'x2_letter') tileDiv.className += ' border-emerald-500/80 glow-green';
             else tileDiv.className += ' border-amber-600/50';
 
-            const letterSpan = document.createElement('span');
-            letterSpan.className = `text-lg lg:text-xl font-black ${cellData.isJoker ? 'text-amber-400 font-serif italic' : 'text-slate-100'}`;
-            letterSpan.textContent = cellData.letter;
-
-            const weightSpan = document.createElement('span');
-            weightSpan.className = 'absolute bottom-1 right-1 text-[8px] font-bold text-slate-400';
-            weightSpan.textContent = cellData.isJoker ? '0' : LETTER_POINTS[cellData.letter] || '1';
+            const letterSpan = document.createElement('span'); letterSpan.className = `text-lg lg:text-xl font-black ${cellData.isJoker ? 'text-amber-400 font-serif italic' : 'text-slate-100'}`; letterSpan.textContent = cellData.letter;
+            const weightSpan = document.createElement('span'); weightSpan.className = 'absolute bottom-1 right-1 text-[8px] font-bold text-slate-400'; weightSpan.textContent = cellData.isJoker ? '0' : LETTER_POINTS[cellData.letter] || '1';
 
             if (mult.type !== 'normal') {
-              const indicator = document.createElement('span');
-              indicator.className = 'absolute top-0.5 left-1 text-[7px] tracking-tighter uppercase font-bold text-slate-400 opacity-85';
+              const indicator = document.createElement('span'); indicator.className = 'absolute top-0.5 left-1 text-[7px] tracking-tighter uppercase font-bold text-slate-400 opacity-85';
               indicator.textContent = mult.type === 'x3_word' ? 'x3с' : mult.type === 'x2_word' ? 'x2с' : mult.type === 'x3_letter' ? 'x3б' : 'x2б';
               tileDiv.appendChild(indicator);
             }
-            tileDiv.appendChild(letterSpan);
-            tileDiv.appendChild(weightSpan);
-            cellBtn.appendChild(tileDiv);
+            tileDiv.appendChild(letterSpan); tileDiv.appendChild(weightSpan); cellBtn.appendChild(tileDiv);
           } else if (mult.type !== 'normal') {
-            const label = document.createElement('span');
-            label.className = `text-[8px] font-semibold select-none uppercase tracking-tighter ${mult.textClass}`;
-            label.textContent = mult.label;
-            cellBtn.appendChild(label);
+            const label = document.createElement('span'); label.className = `text-[8px] font-semibold select-none uppercase tracking-tighter ${mult.textClass}`; label.textContent = mult.label; cellBtn.appendChild(label);
           }
-          cellBtn.onclick = () => openCellEditModal(r, c);
-          rowDiv.appendChild(cellBtn);
+          cellBtn.onclick = () => openCellEditModal(r, c); rowDiv.appendChild(cellBtn);
         }
         container.appendChild(rowDiv);
       }
     }
 
-    // --- MODALS (Cell Edit, Reset, Confirm, Rules) ---
-    let activeEditR = null, activeEditC = null;
+    // --- MODALS ---
     function openCellEditModal(r, c) {
-      playSound('tap');
-      activeEditR = r; activeEditC = c;
-      const cellData = gameState.board[r][c];
+      playSound('tap'); activeEditR = r; activeEditC = c; const cellData = gameState.board[r][c];
       document.getElementById('modalCellCoord').textContent = `${COL_LABELS[c]}${r + 1}`;
-      document.getElementById('modalLetterInput').value = cellData.letter;
-      document.getElementById('modalJokerCheckbox').checked = cellData.isJoker;
-      document.getElementById('cellEditModal').classList.remove('hidden');
-      document.getElementById('modalLetterInput').focus();
+      document.getElementById('modalLetterInput').value = cellData.letter; document.getElementById('modalJokerCheckbox').checked = cellData.isJoker;
+      document.getElementById('cellEditModal').classList.remove('hidden'); document.getElementById('modalLetterInput').focus();
     }
     function closeCellModal() { document.getElementById('cellEditModal').classList.add('hidden'); }
     function saveCellFromModal() {
-      const rawLetter = document.getElementById('modalLetterInput').value.trim().toUpperCase();
-      const isJoker = document.getElementById('modalJokerCheckbox').checked;
+      const rawLetter = document.getElementById('modalLetterInput').value.trim().toUpperCase(); const isJoker = document.getElementById('modalJokerCheckbox').checked;
       if (!rawLetter) { clearCellFromModal(); return; }
       if (!/^[А-ЯЁ]$/.test(rawLetter)) return showToast('Введите кириллическую букву', 'error');
       gameState.board[activeEditR][activeEditC] = { letter: rawLetter, isJoker, isNew: false };
       playSound('success'); closeCellModal(); renderBoard(); renderBag(); autoCalculateIfPossible();
     }
-    function clearCellFromModal() {
-      gameState.board[activeEditR][activeEditC] = { letter: '', isJoker: false, isNew: false };
-      playSound('clear'); closeCellModal(); renderBoard(); renderBag(); autoCalculateIfPossible();
-    }
+    function clearCellFromModal() { gameState.board[activeEditR][activeEditC] = { letter: '', isJoker: false, isNew: false }; playSound('clear'); closeCellModal(); renderBoard(); renderBag(); autoCalculateIfPossible(); }
 
     function openResetModal() { playSound('tap'); document.getElementById('resetConfirmModal').classList.remove('hidden'); }
     function closeResetModal() { document.getElementById('resetConfirmModal').classList.add('hidden'); }
@@ -705,124 +618,66 @@
       updateScoreboardDisplay(); renderBoard(); renderBag(); updateHistoryDisplay(); renderRackTiles(); updateDefaultManualPlayer();
       const list = document.getElementById('suggestionsList');
       if (list) list.innerHTML = `<div class="text-center py-12 text-slate-500"><i data-lucide="search-code" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i><p class="text-xs">Введите буквы на подставку и нажмите «Рассчитать ходы».</p></div>`;
-      const countEl = document.getElementById('suggestionsCount');
-      if (countEl) countEl.textContent = 'Найдено: 0';
+      const countEl = document.getElementById('suggestionsCount'); if (countEl) countEl.textContent = 'Найдено: 0';
       lucide.createIcons();
     }
 
     function openGenericConfirmModal(title, message, action) {
-      document.getElementById('genericConfirmTitle').textContent = title;
-      document.getElementById('genericConfirmMessage').textContent = message;
-      genericConfirmAction = action;
-      document.getElementById('genericConfirmModal').classList.remove('hidden');
-      lucide.createIcons();
+      document.getElementById('genericConfirmTitle').textContent = title; document.getElementById('genericConfirmMessage').textContent = message;
+      genericConfirmAction = action; document.getElementById('genericConfirmModal').classList.remove('hidden'); lucide.createIcons();
     }
-    function closeGenericConfirmModal() {
-      document.getElementById('genericConfirmModal').classList.add('hidden');
-      genericConfirmAction = null;
-    }
+    function closeGenericConfirmModal() { document.getElementById('genericConfirmModal').classList.add('hidden'); genericConfirmAction = null; }
     document.addEventListener("DOMContentLoaded", function() {
       const yesBtn = document.getElementById('genericConfirmYesBtn');
-      if (yesBtn) {
-        yesBtn.onclick = function() {
-          if (genericConfirmAction) genericConfirmAction();
-          closeGenericConfirmModal();
-        };
-      }
+      if (yesBtn) { yesBtn.onclick = function() { if (genericConfirmAction) genericConfirmAction(); closeGenericConfirmModal(); }; }
     });
 
     function toggleRulesModal() { playSound('tap'); document.getElementById('rulesModal').classList.toggle('hidden'); }
 
     // --- RACK & BAG ---
-    function formatRackInput(input) {
-      input.value = input.value.toUpperCase().replace(/[^А-ЯЁ*]/g, '');
-      gameState.rack = input.value.split('');
-      document.getElementById('rackCount').textContent = `${gameState.rack.length} / 7 букв`;
-      renderRackTiles(); renderBag();
-    }
-    function clearRack() {
-      playSound('clear'); document.getElementById('rackInput').value = ''; gameState.rack = [];
-      document.getElementById('rackCount').textContent = `0 / 7 букв`;
-      renderRackTiles(); renderBag();
-    }
+    function formatRackInput(input) { input.value = input.value.toUpperCase().replace(/[^А-ЯЁ*]/g, ''); gameState.rack = input.value.split(''); document.getElementById('rackCount').textContent = `${gameState.rack.length} / 7 букв`; renderRackTiles(); renderBag(); }
+    function clearRack() { playSound('clear'); document.getElementById('rackInput').value = ''; gameState.rack = []; document.getElementById('rackCount').textContent = `0 / 7 букв`; renderRackTiles(); renderBag(); }
     function renderRackTiles() {
-      const container = document.getElementById('rackTilesDisplay');
-      if (!container) return;
-      container.innerHTML = '';
+      const container = document.getElementById('rackTilesDisplay'); if (!container) return; container.innerHTML = '';
       if (gameState.rack.length === 0) { container.innerHTML = '<span class="text-xs text-slate-600 italic py-2">Подставка пуста</span>'; return; }
       gameState.rack.forEach(letter => {
-        const tile = document.createElement('div');
-        tile.className = 'w-9 h-9 rounded-lg wood-tile border border-amber-600/50 flex flex-col items-center justify-center relative shadow-md';
-        const letterSpan = document.createElement('span');
-        letterSpan.className = `text-sm font-black ${letter === '*' ? 'text-amber-400 font-serif italic' : 'text-slate-100'}`;
-        letterSpan.textContent = letter === '*' ? '★' : letter;
-        const pointsSpan = document.createElement('span');
-        pointsSpan.className = 'absolute bottom-0.5 right-1 text-[7px] text-slate-400 font-bold';
-        pointsSpan.textContent = letter === '*' ? '0' : LETTER_POINTS[letter] || '1';
+        const tile = document.createElement('div'); tile.className = 'w-9 h-9 rounded-lg wood-tile border border-amber-600/50 flex flex-col items-center justify-center relative shadow-md';
+        const letterSpan = document.createElement('span'); letterSpan.className = `text-sm font-black ${letter === '*' ? 'text-amber-400 font-serif italic' : 'text-slate-100'}`; letterSpan.textContent = letter === '*' ? '★' : letter;
+        const pointsSpan = document.createElement('span'); pointsSpan.className = 'absolute bottom-0.5 right-1 text-[7px] text-slate-400 font-bold'; pointsSpan.textContent = letter === '*' ? '0' : LETTER_POINTS[letter] || '1';
         tile.appendChild(letterSpan); tile.appendChild(pointsSpan); container.appendChild(tile);
       });
     }
 
     function calculateRemainingBag() {
       const currentBag = { ...INITIAL_BAG };
-      for (let r = 0; r < 15; r++) {
-        for (let c = 0; c < 15; c++) {
-          const tile = gameState.board[r][c];
-          if (tile.letter) {
-            const letterKey = tile.isJoker ? '*' : tile.letter;
-            if (currentBag[letterKey] && currentBag[letterKey] > 0) currentBag[letterKey]--;
-          }
-        }
-      }
+      for (let r = 0; r < 15; r++) { for (let c = 0; c < 15; c++) { const tile = gameState.board[r][c]; if (tile.letter) { const letterKey = tile.isJoker ? '*' : tile.letter; if (currentBag[letterKey] && currentBag[letterKey] > 0) currentBag[letterKey]--; } } }
       gameState.rack.forEach(letter => { if (currentBag[letter] && currentBag[letter] > 0) currentBag[letter]--; });
-      if (gameState.destroyed) {
-        gameState.destroyed.forEach(letter => { if (currentBag[letter] && currentBag[letter] > 0) currentBag[letter]--; });
-      }
+      if (gameState.destroyed) { gameState.destroyed.forEach(letter => { if (currentBag[letter] && currentBag[letter] > 0) currentBag[letter]--; }); }
       return currentBag;
     }
     function renderBag() {
-      const bag = calculateRemainingBag();
-      const container = document.getElementById('bagGrid');
-      if (!container) return;
-      container.innerHTML = '';
-      let totalLetters = 0;
+      const bag = calculateRemainingBag(); const container = document.getElementById('bagGrid'); if (!container) return; container.innerHTML = ''; let totalLetters = 0;
       Object.keys(bag).forEach(letter => {
         const count = bag[letter]; totalLetters += count;
-        const cell = document.createElement('div');
-        cell.className = `p-2 rounded-xl flex flex-col items-center justify-center border text-center transition ${count === 0 ? 'bg-slate-950/40 border-slate-900 text-slate-600' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`;
-        const letterLabel = document.createElement('span');
-        letterLabel.className = `text-xs font-black ${letter === '*' ? 'text-amber-400 font-serif' : 'text-slate-200'}`;
-        letterLabel.textContent = letter === '*' ? '★ (Дж)' : letter;
-        const countLabel = document.createElement('span');
-        countLabel.className = `text-[10px] font-bold ${count === 0 ? 'text-slate-600' : count <= 1 ? 'text-red-400 font-extrabold animate-pulse' : 'text-indigo-400'}`;
-        countLabel.textContent = `${count} шт.`;
+        const cell = document.createElement('div'); cell.className = `p-2 rounded-xl flex flex-col items-center justify-center border text-center transition ${count === 0 ? 'bg-slate-950/40 border-slate-900 text-slate-600' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`;
+        const letterLabel = document.createElement('span'); letterLabel.className = `text-xs font-black ${letter === '*' ? 'text-amber-400 font-serif' : 'text-slate-200'}`; letterLabel.textContent = letter === '*' ? '★ (Дж)' : letter;
+        const countLabel = document.createElement('span'); countLabel.className = `text-[10px] font-bold ${count === 0 ? 'text-slate-600' : count <= 1 ? 'text-red-400 font-extrabold animate-pulse' : 'text-indigo-400'}`; countLabel.textContent = `${count} шт.`;
         cell.appendChild(letterLabel); cell.appendChild(countLabel); container.appendChild(cell);
       });
-      const totalEl = document.getElementById('bagTotalDisplay');
-      if (totalEl) totalEl.textContent = `${totalLetters} / 104 шт.`;
+      const totalEl = document.getElementById('bagTotalDisplay'); if (totalEl) totalEl.textContent = `${totalLetters} / 104 шт.`;
     }
 
     // --- BOARD TOGGLE ---
     function switchBoardType(newType) {
       if (gameState.boardType === newType) return;
-      if (gameState.history.length > 0) {
-        openGenericConfirmModal('Переключение доски', 'Смена типа доски приведет к сбросу текущей партии и очистке истории ходов. Желаете продолжить?', function() {
-          executeBoardChange(newType);
-        });
-      } else {
-        executeBoardChange(newType);
-      }
+      if (gameState.history.length > 0) { openGenericConfirmModal('Переключение доски', 'Смена типа доски приведет к сбросу текущей партии и очистке истории ходов. Желаете продолжить?', function() { executeBoardChange(newType); }); } 
+      else { executeBoardChange(newType); }
     }
     function executeBoardChange(newType) {
-      gameState.boardType = newType;
-      executeResetGame(); // Also clears board and history
-      showToast(`Выбрана ${newType === 'classic' ? 'Классическая доска' : 'Альтернативная доска'}!`, 'success');
-      updateBoardTypeSelectorUI();
+      gameState.boardType = newType; executeResetGame(); showToast(`Выбрана ${newType === 'classic' ? 'Классическая доска' : 'Альтернативная доска'}!`, 'success'); updateBoardTypeSelectorUI();
     }
     function updateBoardTypeSelectorUI() {
-      const classicBtn = document.getElementById('boardTypeBtn-classic');
-      const alternativeBtn = document.getElementById('boardTypeBtn-alternative');
-      if (!classicBtn || !alternativeBtn) return;
+      const classicBtn = document.getElementById('boardTypeBtn-classic'); const alternativeBtn = document.getElementById('boardTypeBtn-alternative'); if (!classicBtn || !alternativeBtn) return;
       if (gameState.boardType === 'classic') {
         classicBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition-all duration-150 bg-indigo-600 text-white flex items-center space-x-1';
         alternativeBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition-all duration-150 text-slate-400 hover:text-slate-200 flex items-center space-x-1';
@@ -840,29 +695,23 @@
       const list = document.getElementById('suggestionsList');
       if (list) list.innerHTML = `<div class="text-center py-12 text-slate-500"><i data-lucide="loader-2" class="w-12 h-12 mx-auto text-indigo-500 mb-3 animate-spin"></i><p class="text-xs">Глубокий поиск вариантов. Пожалуйста, подождите...</p></div>`;
       lucide.createIcons();
-      
-      // Delaying the heavy work so the UI can paint the loader
       setTimeout(() => {
         calculateSuggestions();
         if (btn) { btn.innerHTML = '<i data-lucide="zap" class="w-4 h-4 animate-bounce"></i><span>Рассчитать ходы</span>'; btn.disabled = false; }
         lucide.createIcons();
       }, 50);
     }
-
     function autoCalculateIfPossible() { if (gameState.rack.length > 0) startCalculation(); }
 
     function getVerticalWordAt(r, c, letter) {
-      let word = letter;
-      let currR = r - 1;
+      let word = letter; let currR = r - 1;
       while (currR >= 0 && gameState.board[currR][c].letter !== '') { word = gameState.board[currR][c].letter + word; currR--; }
       currR = r + 1;
       while (currR < 15 && gameState.board[currR][c].letter !== '') { word = word + gameState.board[currR][c].letter; currR++; }
       return word.length > 1 ? word : "";
     }
-    
     function getHorizontalWordAt(r, c, letter) {
-      let word = letter;
-      let currC = c - 1;
+      let word = letter; let currC = c - 1;
       while (currC >= 0 && gameState.board[r][currC].letter !== '') { word = gameState.board[r][currC].letter + word; currC--; }
       currC = c + 1;
       while (currC < 15 && gameState.board[r][currC].letter !== '') { word = word + gameState.board[r][currC].letter; currC++; }
@@ -879,16 +728,12 @@
           continue;
         }
         let foundIdx = -1;
-        for (let j = 0; j < availableRack.length; j++) {
-          if (!rackUsedFlags[j] && availableRack[j] === needLetter) { foundIdx = j; break; }
-        }
+        for (let j = 0; j < availableRack.length; j++) { if (!rackUsedFlags[j] && availableRack[j] === needLetter) { foundIdx = j; break; } }
         if (foundIdx !== -1) {
           rackUsedFlags[foundIdx] = true; result.rackIndicesUsed.push(foundIdx); result.lettersUsedFromRack.push({ letter: needLetter, pos: i });
         } else {
           let jokerIdx = -1;
-          for (let j = 0; j < availableRack.length; j++) {
-            if (!rackUsedFlags[j] && availableRack[j] === '*') { jokerIdx = j; break; }
-          }
+          for (let j = 0; j < availableRack.length; j++) { if (!rackUsedFlags[j] && availableRack[j] === '*') { jokerIdx = j; break; } }
           if (jokerIdx !== -1) {
             rackUsedFlags[jokerIdx] = true; result.rackIndicesUsed.push(jokerIdx); result.jokersUsedFromRack.push({ letter: needLetter, pos: i });
           } else {
@@ -907,24 +752,17 @@
         const mult = getCellMultiplier(tile.r, tile.c);
         if (!boardTile.letter) {
           newlyPlacedCount++;
-          if (mult.type === 'x2_letter') total += baseVal * 2;
-          else if (mult.type === 'x3_letter') total += baseVal * 3;
-          else total += baseVal;
-          if (mult.type === 'x2_word') wordMult *= 2;
-          else if (mult.type === 'x3_word') wordMult *= 3;
-        } else {
-          total += baseVal;
-        }
+          if (mult.type === 'x2_letter') total += baseVal * 2; else if (mult.type === 'x3_letter') total += baseVal * 3; else total += baseVal;
+          if (mult.type === 'x2_word') wordMult *= 2; else if (mult.type === 'x3_word') wordMult *= 3;
+        } else { total += baseVal; }
       });
       total *= wordMult;
       if (newlyPlacedCount === 7) total += 15;
       return { total, newlyPlacedCount }; 
     }
 
-    // Оценка тактического риска при открытии свободных клеток-множителей
     function getTacticalPenalty(tilesToPlace, board) {
-        let penalty = 0;
-        let opened = [];
+        let penalty = 0; let opened = [];
         tilesToPlace.forEach(tile => {
             if (board[tile.r][tile.c].letter !== '') return;
             const neighbors = [ [tile.r - 1, tile.c], [tile.r + 1, tile.c], [tile.r, tile.c - 1], [tile.r, tile.c + 1] ];
@@ -944,7 +782,6 @@
 
     function evaluateAndPushCandidate(word, r, c, dir, candidatesArray, isFirstMove) {
       const boardLettersNeed = []; let overlapCount = 0; let conflict = false; let touchingExisting = false; let highValueComboText = "";
-      
       if (dir === 'H') {
         if (c - 1 >= 0 && gameState.board[r][c - 1].letter !== '') return;
         if (c + word.length < 15 && gameState.board[r][c + word.length].letter !== '') return;
@@ -954,26 +791,19 @@
       }
 
       for (let idx = 0; idx < word.length; idx++) {
-        const currR = dir === 'H' ? r : r + idx;
-        const currC = dir === 'H' ? c + idx : c;
-        const boardTile = gameState.board[currR][currC];
-        const letter = word[idx];
-
+        const currR = dir === 'H' ? r : r + idx; const currC = dir === 'H' ? c + idx : c;
+        const boardTile = gameState.board[currR][currC]; const letter = word[idx];
         if (boardTile.letter !== '') {
           boardLettersNeed.push(boardTile.letter); overlapCount++; touchingExisting = true;
           if (boardTile.letter !== letter) conflict = true;
         } else {
           boardLettersNeed.push(null);
           const crossWord = dir === 'H' ? getVerticalWordAt(currR, currC, letter) : getHorizontalWordAt(currR, currC, letter);
-          if (crossWord !== "") {
-            touchingExisting = true;
-            if (!DICTIONARY.has(crossWord)) conflict = true;
-          }
+          if (crossWord !== "") { touchingExisting = true; if (!DICTIONARY.has(crossWord)) conflict = true; }
         }
       }
       
       if (conflict || overlapCount === word.length) return;
-      
       if (isFirstMove) {
         let coversCenter = false;
         for (let idx = 0; idx < word.length; idx++) {
@@ -981,9 +811,7 @@
           if (currR === 7 && currC === 7) coversCenter = true;
         }
         if (!coversCenter) return;
-      } else {
-        if (!touchingExisting) return;
-      }
+      } else { if (!touchingExisting) return; }
       
       const formResult = canFormWord(word, boardLettersNeed, gameState.rack);
       if (!formResult.possible) return;
@@ -998,7 +826,6 @@
         const isJoker = boardTile.letter ? boardTile.isJoker : (formResult.jokersRequired.some(x => x.pos === idx) || formResult.jokersUsedFromRack.some(x => x.pos === idx)); 
         const letterVal = LETTER_POINTS[word[idx]] || 0;
         const mult = getCellMultiplier(currR, currC);
-        
         if (boardLettersNeed[idx] === null && letterVal >= 5 && (mult.type === 'x3_letter' || mult.type === 'x2_letter')) {
           highValueComboText = `🔥 Комбо: буква [${word[idx]}] на ${mult.type === 'x3_letter' ? 'x3' : 'x2'} букве!`;
         }
@@ -1010,16 +837,9 @@
       const finalSortScore = scoreObj.total - tactical.penalty;
 
       candidatesArray.push({
-        word, r, c, dir, 
-        score: scoreObj.total, 
-        sortScore: finalSortScore,
-        newlyPlacedCount: scoreObj.newlyPlacedCount,
-        requireJokers, 
-        jokersRequiredList: formResult.jokersRequired, 
-        jokersUsedFromRack: formResult.jokersUsedFromRack,
-        rackIndicesUsed: formResult.rackIndicesUsed, 
-        combo: highValueComboText,
-        openedPremium: tactical.opened
+        word, r, c, dir, score: scoreObj.total, sortScore: finalSortScore, newlyPlacedCount: scoreObj.newlyPlacedCount,
+        requireJokers, jokersRequiredList: formResult.jokersRequired, jokersUsedFromRack: formResult.jokersUsedFromRack,
+        rackIndicesUsed: formResult.rackIndicesUsed, combo: highValueComboText, openedPremium: tactical.opened
       });
     }
 
@@ -1040,7 +860,6 @@
         }
       }
 
-      // ПРЕ-ФИЛЬТРАЦИЯ (Без блокирующего условия hasOverlap)
       const potentialWords = [];
       const rackLetters = gameState.rack.filter(l => l !== '*');
       const rackJokersCount = gameState.rack.filter(l => l === '*').length;
@@ -1059,7 +878,6 @@
         if (word.length < 2 || word.length > 15) return;
         const wordFreq = {};
         for (let i = 0; i < word.length; i++) wordFreq[word[i]] = (wordFreq[word[i]] || 0) + 1;
-        
         let missingLettersCount = 0;
         for (const l in wordFreq) {
           const needed = wordFreq[l]; const onRack = rackFreq[l] || 0; const onBoard = boardLettersFreq[l] || 0;
@@ -1085,29 +903,29 @@
         if (!seen.has(key)) { seen.add(key); uniqueCandidates.push(cand); }
       });
 
-      // РЕШЕНИЕ ПРОБЛЕМЫ БЕСПЛАТНЫХ СЛОВ: Разделяем списки до обрезки, чтобы платные ходы не вытесняли бесплатные
+      // РЕШЕНИЕ ПРОБЛЕМЫ БЕСПЛАТНЫХ СЛОВ: Разделяем списки
       const freeWords = uniqueCandidates.filter(c => c.requireJokers === 0);
       const jokerWords = uniqueCandidates.filter(c => c.requireJokers > 0);
 
       freeWords.sort((a, b) => b.sortScore - a.sortScore);
       jokerWords.sort((a, b) => b.sortScore - a.sortScore);
 
-      const topFree = freeWords.slice(0, 75);
-      const topJokers = jokerWords.slice(0, 50);
+      const topFree = freeWords.slice(0, 150);
+      const topJokers = jokerWords.slice(0, 100);
       const combinedTop = [...topFree, ...topJokers];
 
       // Оцениваем риски достройки ТОЛЬКО для финального топа
       combinedTop.forEach(cand => { 
         cand.risks = analyzeExtensionRisks(cand.word, cand.r, cand.c, cand.dir); 
         if (cand.risks.length > 0) {
-            // Штрафуем рейтинг хода на 50% от потенциала соперника
-            cand.sortScore -= (cand.risks[0].scoreImpact * 0.5);
+            // Штрафуем рейтинг хода на потенциал соперника
+            cand.sortScore -= cand.risks[0].scoreImpact;
         }
       });
       
       combinedTop.sort((a, b) => b.sortScore - a.sortScore);
 
-      gameState.lastCalculatedSuggestions = combinedTop;
+      gameState.lastCalculatedSuggestions = combinedTop.slice(0, 100);
       renderSuggestions();
       playSound('success');
     }
@@ -1119,20 +937,39 @@
         const idx = dictWord.indexOf(word);
         if (idx !== -1) {
           const prefix = dictWord.slice(0, idx); const suffix = dictWord.slice(idx + word.length);
+          
+          // ЗАЩИТА 1: Соперник имеет только 7 фишек!
+          if (prefix.length + suffix.length > 7) return;
+
           let isPhysicallyPossible = true;
+
+          // ЗАЩИТА 2: Проверяем физическое свободное место на доске для префикса (и что он не упрется)
           if (prefix.length > 0) {
             for (let i = 1; i <= prefix.length; i++) {
               const testR = dir === 'H' ? r : r - i; const testC = dir === 'H' ? c - i : c;
-              if (testR < 0 || testR >= 15 || testC < 0 || testC >= 15 || gameState.board[testR][testC].letter) { isPhysicallyPossible = false; break; }
+              if (testR < 0 || testR >= 15 || testC < 0 || testC >= 15) { isPhysicallyPossible = false; break; }
+              if (gameState.board[testR][testC].letter) { isPhysicallyPossible = false; break; }
+            }
+            if (isPhysicallyPossible) {
+              const capR = dir === 'H' ? r : r - prefix.length - 1; const capC = dir === 'H' ? c - prefix.length - 1 : c;
+              if (capR >= 0 && capR < 15 && capC >= 0 && capC < 15 && gameState.board[capR][capC].letter) { isPhysicallyPossible = false; }
             }
           }
-          if (suffix.length > 0) {
-            const wLen = word.length;
+
+          // ЗАЩИТА 3: Проверяем физическое место для суффикса (и что он не упрется)
+          if (isPhysicallyPossible && suffix.length > 0) {
+            const wordEndOffset = word.length;
             for (let i = 0; i < suffix.length; i++) {
-              const testR = dir === 'H' ? r : r + wLen + i; const testC = dir === 'H' ? c + wLen + i : c;
-              if (testR < 0 || testR >= 15 || testC < 0 || testC >= 15 || gameState.board[testR][testC].letter) { isPhysicallyPossible = false; break; }
+              const testR = dir === 'H' ? r : r + wordEndOffset + i; const testC = dir === 'H' ? c + wordEndOffset + i : c;
+              if (testR < 0 || testR >= 15 || testC < 0 || testC >= 15) { isPhysicallyPossible = false; break; }
+              if (gameState.board[testR][testC].letter) { isPhysicallyPossible = false; break; }
+            }
+            if (isPhysicallyPossible) {
+              const capR = dir === 'H' ? r : r + wordEndOffset + suffix.length; const capC = dir === 'H' ? c + wordEndOffset + suffix.length : c;
+              if (capR >= 0 && capR < 15 && capC >= 0 && capC < 15 && gameState.board[capR][capC].letter) { isPhysicallyPossible = false; }
             }
           }
+
           if (isPhysicallyPossible) {
             risks.push({ targetWord: dictWord, prefix, suffix, scoreImpact: calculatePotentialOpponentPoints(dictWord, prefix, suffix, r, c, dir, idx) });
           }
@@ -1146,7 +983,8 @@
       let score = 0; let wordMult = 1;
       for (let i = 0; i < dictWord.length; i++) {
         const currR = dir === 'H' ? startR : startR + i; const currC = dir === 'H' ? startC + i : startC;
-        const isAlreadyOnBoard = (i >= matchIdx && i < matchIdx + dictWord.length - prefix.length - suffix.length);
+        const wordLength = dictWord.length - prefix.length - suffix.length;
+        const isAlreadyOnBoard = (i >= matchIdx && i < matchIdx + wordLength);
         const letterVal = LETTER_POINTS[dictWord[i]] || 1;
         const mult = getCellMultiplier(currR, currC);
         if (isAlreadyOnBoard) { score += letterVal; } 
@@ -1194,8 +1032,7 @@
           div.appendChild(decor);
         }
 
-        const topRow = document.createElement('div');
-        topRow.className = 'flex items-center justify-between';
+        const topRow = document.createElement('div'); topRow.className = 'flex items-center justify-between';
         const leftGroup = document.createElement('div'); leftGroup.className = 'flex items-center space-x-2';
         const wordSpan = document.createElement('span'); wordSpan.className = 'font-mono-custom font-extrabold text-lg text-slate-100 tracking-wider'; wordSpan.textContent = cand.word;
         const dirBadge = document.createElement('span'); dirBadge.className = 'text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-bold'; dirBadge.textContent = `${COL_LABELS[cand.c]}${cand.r + 1} • ${cand.dir === 'H' ? 'Г' : 'В'}`;
@@ -1244,12 +1081,14 @@
           cand.risks.forEach(risk => {
             const riskItem = document.createElement('div'); riskItem.className = 'flex items-center justify-between text-[10px] text-slate-400 bg-red-950/10 border border-red-950/30 px-2 py-1.5 rounded-lg';
             let explanation = '';
-            if (risk.prefix && risk.suffix) explanation = `Допишет по бокам «${risk.prefix}...${risk.suffix}» до «${risk.targetWord}»`;
-            else if (risk.prefix) explanation = `Припишет спереди «${risk.prefix}...» до «${risk.targetWord}»`;
-            else explanation = `Припишет сзади «...${risk.suffix}» до «${risk.targetWord}»`;
-            riskItem.innerHTML = `<span class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5 animate-pulse"></span> ${explanation}</span><span class="text-red-400 font-extrabold">Соперник получит: +${risk.scoreImpact} очков</span>`;
+            if (risk.prefix && risk.suffix) explanation = `Допишет «${risk.prefix}...${risk.suffix}» до «${risk.targetWord}»`;
+            else if (risk.prefix) explanation = `Допишет спереди «${risk.prefix}...» до «${risk.targetWord}»`;
+            else explanation = `Допишет сзади «...${risk.suffix}» до «${risk.targetWord}»`;
+            riskItem.innerHTML = `<span class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5 animate-pulse"></span>⚠️ ${explanation}</span><span class="text-red-400 font-bold">+${risk.scoreImpact} очков сопернику</span>`;
             riskBlock.appendChild(riskItem);
           });
+          const penaltyInfo = document.createElement('div'); penaltyInfo.className = 'text-[9px] text-rose-400 font-bold mt-1 text-right w-full';
+          penaltyInfo.textContent = `(Штраф за риск: -${cand.risks[0].scoreImpact} из рейтинга хода)`; riskBlock.appendChild(penaltyInfo);
           div.appendChild(riskBlock);
         }
 
@@ -1328,7 +1167,7 @@
         const currR = dir === 'H' ? r : r + i; const currC = dir === 'H' ? c + i : c;
         const letter = word[i];
         const boardTile = gameState.board[currR][currC];
-        // JOKER FIX IS HERE
+        // JOKER FIX: Is already on the board as a joker? Keep it.
         const isJoker = boardTile.letter ? boardTile.isJoker : allJokers.includes(i);
         wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker });
       }
@@ -1355,7 +1194,6 @@
       const countEl = document.getElementById('suggestionsCount'); if (countEl) countEl.textContent = 'Найдено: 0';
     }
 
-    // --- MANUAL ENTRY ---
     function updateDefaultManualPlayer() {
       const select = document.getElementById('manualPlayer');
       if (!select) return;
@@ -1452,7 +1290,7 @@
       const previousRack = [...gameState.rack];
       wordTilesToPlace.forEach(tile => { gameState.board[tile.r][tile.c] = { letter: tile.letter, isJoker: tile.isJoker, isNew: false }; });
 
-      if (player === 'player' && rackIndicesUsed && rackIndicesUsed.length > 0) {
+      if (player === 'player' && rackIndicesUsed.length > 0) {
         const newRack = previousRack.filter((_, idx) => !rackIndicesUsed.includes(idx));
         gameState.rack = newRack; document.getElementById('rackInput').value = newRack.join('');
         document.getElementById('rackCount').textContent = `${newRack.length} / 7 букв`; renderRackTiles();
@@ -1564,9 +1402,7 @@
           const response = await fetch(fileName);
           if (response.ok) {
             const text = await response.text();
-            const words = text.split(/[\r\n\s,]+/)
-                              .map(w => w.trim().toUpperCase().replace('Ё', 'Е'))
-                              .filter(w => w.length >= 2 && /^[А-Я]+$/.test(w));
+            const words = text.split(/[\r\n\s,]+/).map(w => w.trim().toUpperCase().replace('Ё', 'Е')).filter(w => w.length >= 2 && /^[А-Я]+$/.test(w));
             if (words.length > 0) {
               words.forEach(word => DICTIONARY.add(word));
               updateDictStatusText(`Загружен словарь: ${fileName} (${DICTIONARY.size} слов)`);
@@ -1574,9 +1410,7 @@
               break;
             }
           }
-        } catch (e) {
-          // Игнорируем ошибку недоступности файла
-        }
+        } catch (e) {}
       }
     }
 
