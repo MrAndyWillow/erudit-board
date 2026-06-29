@@ -71,7 +71,7 @@
         <h1 class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-orange-300 to-indigo-400">
           ЭРУДИТ ПОМОЩНИК
         </h1>
-        <p class="text-xs text-slate-400">Интеллектуальный симулятор & анализатор ходов</p>
+        <p class="text-xs text-slate-400">Интеллектуальная тактика & анализатор ходов</p>
       </div>
     </div>
     
@@ -840,12 +840,15 @@
       const list = document.getElementById('suggestionsList');
       if (list) list.innerHTML = `<div class="text-center py-12 text-slate-500"><i data-lucide="loader-2" class="w-12 h-12 mx-auto text-indigo-500 mb-3 animate-spin"></i><p class="text-xs">Глубокий поиск вариантов. Пожалуйста, подождите...</p></div>`;
       lucide.createIcons();
+      
+      // Delaying the heavy work so the UI can paint the loader
       setTimeout(() => {
         calculateSuggestions();
         if (btn) { btn.innerHTML = '<i data-lucide="zap" class="w-4 h-4 animate-bounce"></i><span>Рассчитать ходы</span>'; btn.disabled = false; }
         lucide.createIcons();
       }, 50);
     }
+
     function autoCalculateIfPossible() { if (gameState.rack.length > 0) startCalculation(); }
 
     function getVerticalWordAt(r, c, letter) {
@@ -856,6 +859,7 @@
       while (currR < 15 && gameState.board[currR][c].letter !== '') { word = word + gameState.board[currR][c].letter; currR++; }
       return word.length > 1 ? word : "";
     }
+    
     function getHorizontalWordAt(r, c, letter) {
       let word = letter;
       let currC = c - 1;
@@ -914,11 +918,33 @@
       });
       total *= wordMult;
       if (newlyPlacedCount === 7) total += 15;
-      return { total, newlyPlacedCount }; // Return obj to see if +15 triggered
+      return { total, newlyPlacedCount }; 
+    }
+
+    // Оценка тактического риска при открытии свободных клеток-множителей
+    function getTacticalPenalty(tilesToPlace, board) {
+        let penalty = 0;
+        let opened = [];
+        tilesToPlace.forEach(tile => {
+            if (board[tile.r][tile.c].letter !== '') return;
+            const neighbors = [ [tile.r - 1, tile.c], [tile.r + 1, tile.c], [tile.r, tile.c - 1], [tile.r, tile.c + 1] ];
+            neighbors.forEach(([nr, nc]) => {
+                if (nr >= 0 && nr < 15 && nc >= 0 && nc < 15) {
+                    const isPartofNewWord = tilesToPlace.some(t => t.r === nr && t.c === nc);
+                    if (!isPartofNewWord && board[nr][nc].letter === '') {
+                        const mult = getCellMultiplier(nr, nc);
+                        if (mult.type === 'x3_word') { penalty += 15; opened.push('x3 Слово'); }
+                        else if (mult.type === 'x2_word') { penalty += 8; opened.push('x2 Слово'); }
+                    }
+                }
+            });
+        });
+        return { penalty, opened: [...new Set(opened)] };
     }
 
     function evaluateAndPushCandidate(word, r, c, dir, candidatesArray, isFirstMove) {
       const boardLettersNeed = []; let overlapCount = 0; let conflict = false; let touchingExisting = false; let highValueComboText = "";
+      
       if (dir === 'H') {
         if (c - 1 >= 0 && gameState.board[r][c - 1].letter !== '') return;
         if (c + word.length < 15 && gameState.board[r][c + word.length].letter !== '') return;
@@ -926,11 +952,13 @@
         if (r - 1 >= 0 && gameState.board[r - 1][c].letter !== '') return;
         if (r + word.length < 15 && gameState.board[r + word.length][c].letter !== '') return;
       }
+
       for (let idx = 0; idx < word.length; idx++) {
         const currR = dir === 'H' ? r : r + idx;
         const currC = dir === 'H' ? c + idx : c;
         const boardTile = gameState.board[currR][currC];
         const letter = word[idx];
+
         if (boardTile.letter !== '') {
           boardLettersNeed.push(boardTile.letter); overlapCount++; touchingExisting = true;
           if (boardTile.letter !== letter) conflict = true;
@@ -943,7 +971,9 @@
           }
         }
       }
+      
       if (conflict || overlapCount === word.length) return;
+      
       if (isFirstMove) {
         let coversCenter = false;
         for (let idx = 0; idx < word.length; idx++) {
@@ -954,6 +984,7 @@
       } else {
         if (!touchingExisting) return;
       }
+      
       const formResult = canFormWord(word, boardLettersNeed, gameState.rack);
       if (!formResult.possible) return;
       const requireJokers = formResult.jokersRequired.length;
@@ -963,10 +994,11 @@
       for (let idx = 0; idx < word.length; idx++) {
         const currR = dir === 'H' ? r : r + idx; const currC = dir === 'H' ? c + idx : c;
         const boardTile = gameState.board[currR][currC];
-        // JOKER FIX: If it's already on the board as a joker, preserve it!
+        // JOKER FIX: Is already on the board as a joker? Keep it.
         const isJoker = boardTile.letter ? boardTile.isJoker : (formResult.jokersRequired.some(x => x.pos === idx) || formResult.jokersUsedFromRack.some(x => x.pos === idx)); 
         const letterVal = LETTER_POINTS[word[idx]] || 0;
         const mult = getCellMultiplier(currR, currC);
+        
         if (boardLettersNeed[idx] === null && letterVal >= 5 && (mult.type === 'x3_letter' || mult.type === 'x2_letter')) {
           highValueComboText = `🔥 Комбо: буква [${word[idx]}] на ${mult.type === 'x3_letter' ? 'x3' : 'x2'} букве!`;
         }
@@ -974,10 +1006,20 @@
       }
 
       const scoreObj = calculateSpecificMoveScore(tilesToPlace);
+      const tactical = getTacticalPenalty(tilesToPlace, gameState.board);
+      const finalSortScore = scoreObj.total - tactical.penalty;
+
       candidatesArray.push({
-        word, r, c, dir, score: scoreObj.total, newlyPlacedCount: scoreObj.newlyPlacedCount,
-        requireJokers, jokersRequiredList: formResult.jokersRequired, jokersUsedFromRack: formResult.jokersUsedFromRack,
-        rackIndicesUsed: formResult.rackIndicesUsed, combo: highValueComboText
+        word, r, c, dir, 
+        score: scoreObj.total, 
+        sortScore: finalSortScore,
+        newlyPlacedCount: scoreObj.newlyPlacedCount,
+        requireJokers, 
+        jokersRequiredList: formResult.jokersRequired, 
+        jokersUsedFromRack: formResult.jokersUsedFromRack,
+        rackIndicesUsed: formResult.rackIndicesUsed, 
+        combo: highValueComboText,
+        openedPremium: tactical.opened
       });
     }
 
@@ -998,29 +1040,26 @@
         }
       }
 
+      // ПРЕ-ФИЛЬТРАЦИЯ (Без блокирующего условия hasOverlap)
       const potentialWords = [];
       const rackLetters = gameState.rack.filter(l => l !== '*');
       const rackJokersCount = gameState.rack.filter(l => l === '*').length;
       const maxMissingLetters = rackJokersCount + 2; 
 
       const rackFreq = {}; for (const l of rackLetters) rackFreq[l] = (rackFreq[l] || 0) + 1;
-      const boardLettersFreq = {}; let boardHasLetters = false;
+      const boardLettersFreq = {};
       for (let r = 0; r < 15; r++) {
         for (let c = 0; c < 15; c++) {
           const l = gameState.board[r][c].letter;
-          if (l) { boardLettersFreq[l] = (boardLettersFreq[l] || 0) + 1; boardHasLetters = true; }
+          if (l) boardLettersFreq[l] = (boardLettersFreq[l] || 0) + 1;
         }
       }
 
       DICTIONARY.forEach(word => {
         if (word.length < 2 || word.length > 15) return;
-        if (boardHasLetters) {
-          let hasOverlap = false;
-          for (let i = 0; i < word.length; i++) { if (boardLettersFreq[word[i]]) { hasOverlap = true; break; } }
-          if (!hasOverlap) return;
-        }
         const wordFreq = {};
         for (let i = 0; i < word.length; i++) wordFreq[word[i]] = (wordFreq[word[i]] || 0) + 1;
+        
         let missingLettersCount = 0;
         for (const l in wordFreq) {
           const needed = wordFreq[l]; const onRack = rackFreq[l] || 0; const onBoard = boardLettersFreq[l] || 0;
@@ -1045,13 +1084,30 @@
         const key = `${cand.word}_${cand.r}_${cand.c}_${cand.dir}`;
         if (!seen.has(key)) { seen.add(key); uniqueCandidates.push(cand); }
       });
-      uniqueCandidates.sort((a, b) => b.score - a.score);
 
-      // ОПТИМИЗАЦИЯ: Оцениваем риски только для ТОП-100 ходов
-      const topCandidates = uniqueCandidates.slice(0, 100);
-      topCandidates.forEach(cand => { cand.risks = analyzeExtensionRisks(cand.word, cand.r, cand.c, cand.dir); });
+      // РЕШЕНИЕ ПРОБЛЕМЫ БЕСПЛАТНЫХ СЛОВ: Разделяем списки до обрезки, чтобы платные ходы не вытесняли бесплатные
+      const freeWords = uniqueCandidates.filter(c => c.requireJokers === 0);
+      const jokerWords = uniqueCandidates.filter(c => c.requireJokers > 0);
 
-      gameState.lastCalculatedSuggestions = topCandidates;
+      freeWords.sort((a, b) => b.sortScore - a.sortScore);
+      jokerWords.sort((a, b) => b.sortScore - a.sortScore);
+
+      const topFree = freeWords.slice(0, 75);
+      const topJokers = jokerWords.slice(0, 50);
+      const combinedTop = [...topFree, ...topJokers];
+
+      // Оцениваем риски достройки ТОЛЬКО для финального топа
+      combinedTop.forEach(cand => { 
+        cand.risks = analyzeExtensionRisks(cand.word, cand.r, cand.c, cand.dir); 
+        if (cand.risks.length > 0) {
+            // Штрафуем рейтинг хода на 50% от потенциала соперника
+            cand.sortScore -= (cand.risks[0].scoreImpact * 0.5);
+        }
+      });
+      
+      combinedTop.sort((a, b) => b.sortScore - a.sortScore);
+
+      gameState.lastCalculatedSuggestions = combinedTop;
       renderSuggestions();
       playSound('success');
     }
@@ -1149,7 +1205,6 @@
         const scoreVal = document.createElement('span'); scoreVal.className = `text-lg font-black ${isJokerDeal ? 'text-amber-400' : 'text-emerald-400'}`; scoreVal.textContent = `+${cand.score} очк.`;
         rightGroup.appendChild(scoreVal);
         
-        // BONUS 15pts text
         if (cand.newlyPlacedCount === 7) {
           const bonusSpan = document.createElement('span'); bonusSpan.className = 'text-[9px] text-amber-300 font-bold animate-pulse'; bonusSpan.textContent = '✨ Бонус +15 очков!';
           rightGroup.appendChild(bonusSpan);
@@ -1160,6 +1215,12 @@
         if (cand.combo) {
           const comboLine = document.createElement('div'); comboLine.className = 'mt-1 text-[10px] text-emerald-400 font-semibold flex items-center space-x-1';
           comboLine.innerHTML = `<i data-lucide="flame" class="w-3.5 h-3.5 text-emerald-500"></i> <span>${cand.combo}</span>`; div.appendChild(comboLine);
+        }
+
+        if (cand.openedPremium && cand.openedPremium.length > 0) {
+          const tacLine = document.createElement('div'); tacLine.className = 'mt-1.5 text-[10px] text-rose-400 font-semibold flex items-center space-x-1 bg-rose-950/20 px-2 py-1 rounded w-max border border-rose-900/30';
+          tacLine.innerHTML = `<i data-lucide="crosshair" class="w-3 h-3 text-rose-500 animate-pulse"></i> <span>⚠️ Опасно: вы открываете доступ к ${cand.openedPremium.join(', ')}</span>`; 
+          div.appendChild(tacLine);
         }
 
         if (isJokerDeal) {
