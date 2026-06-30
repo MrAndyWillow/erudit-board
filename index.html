@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Эрудит Помощник Pro</title>
+  
+  <!-- PWA Meta Tags (Полноэкранный режим на iOS и Android) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Эрудит Pro">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#020617">
+  
+  <!-- Иконка приложения (встроена в Base64 для независимости от внешних файлов) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDVhMyAzIDAgMSAwLTUuOTk3LjEyNSA0IDQgMCAwIDAtNS4yMjQgNS4yMjRBNCA0IDAgMCAwIDQuMyAxOS43YTQgNCAwIDAgMCA1LjIyNC01LjIyNEE0IDQgMCAwIDAgMTQgMTIuMUwyMiA0Ii8+PHBhdGggZD0iTTE5LjIgMTdMMTIgMTJNMTkuMiAxMmwtMy4yLTMuMiIvPjwvc3ZnPg==">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -1396,7 +1407,7 @@
     }
 
     async function tryFetchExternalDictionaries() {
-      const filesToTry = ['russian_words_nouns.txt', 'dictionary.txt'];
+      const filesToTry = ['nouns.txt', 'dictionary.txt'];
       for (const fileName of filesToTry) {
         try {
           const response = await fetch(fileName);
@@ -1416,6 +1427,27 @@
 
     // --- INIT ---
     window.onload = async function() {
+      // --- Инициализация PWA (Web App Manifest) ---
+      const manifest = {
+        name: "Эрудит Помощник Pro",
+        short_name: "Эрудит Pro",
+        display: "standalone",
+        background_color: "#020617",
+        theme_color: "#0f172a",
+        icons: [{
+          src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDVhMyAzIDAgMSAwLTUuOTk3LjEyNSA0IDQgMCAwIDAtNS4yMjQgNS4yMjRBNCA0IDAgMCAwIDQuMyAxOS43YTQgNCAwIDAgMCA1LjIyNC01LjIyNEE0IDQgMCAwIDAgMTQgMTIuMUwyMiA0Ii8+PHBhdGggZD0iTTE5LjIgMTdMMTIgMTJNMTkuMiAxMmwtMy4yLTMuMiIvPjwvc3ZnPg==",
+          sizes: "512x512",
+          type: "image/svg+xml"
+        }]
+      };
+      const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
+      const manifestURL = URL.createObjectURL(manifestBlob);
+      const manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = manifestURL;
+      document.head.appendChild(manifestLink);
+      // -------------------------------------------
+
       lucide.createIcons();
       BUILTIN_WORDS.forEach(word => DICTIONARY.add(word));
       updateDictStatusText(`Встроенный словарь (${DICTIONARY.size} сущ.)`);
