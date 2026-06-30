@@ -470,10 +470,10 @@
         <ul class="space-y-2 pl-4 list-disc">
           <li><span class="text-emerald-400 font-bold">x2 буква (зеленый)</span> — количество очков буквы умножается на <span class="underline">два</span>.</li>
           <li><span class="text-sky-400 font-bold">x3 буква (голубой)</span> — количество очков буквы умножается на <span class="underline text-sky-400">три</span>.</li>
-          <li><span class="text-amber-400 font-bold">x2 слово (оранжевый)</span> — количество очков всего слова умножается на <span class="underline">два</span>.</li>
-          <li><span class="text-red-400 font-bold">x3 слово (красный)</span> — количество очков всего слова умножается на <span class="underline">три</span>.</li>
+          <li><span class="text-amber-400 font-bold">x2 слово (оранжевый)</span> — количество очков всего слова складывается с номиналом.</li>
+          <li><span class="text-red-400 font-bold">x3 слово (красный)</span> — количество очков всего слова складывается с номиналом.</li>
         </ul>
-        <p>Если слово одновременно накрывает множители буквы и слова, то сначала рассчитывается итоговый вес каждой буквы (с учетом ее множителей), затем они складываются, и итоговая сумма умножается на множитель слова.</p>
+        <p>Если слово пересекает сразу два поля "х3", множители складываются (3 + 3 = x6 очков). Очки за образовавшиеся перпендикулярные кросс-слова также рассчитываются и прибавляются к общему счету!</p>
         <p class="bg-indigo-950/30 border border-indigo-900/50 p-2.5 rounded-lg"><span class="text-indigo-400 font-bold">Бонус за 7 букв:</span> Если за ход игрок использовал все семь букв со своей подставки, ему начисляются дополнительные <span class="text-indigo-300 font-bold">15 очков</span>.</p>
       </div>
     </div>
@@ -755,26 +755,80 @@
       return result;
     }
 
-    function calculateSpecificMoveScore(tilesToPlace) {
-      let total = 0; let wordMult = 1; let newlyPlacedCount = 0;
+    function calculateSpecificMoveScore(tilesToPlace, dir) {
+      let mainWordScore = 0; let mainWordMult = 0; let newlyPlacedCount = 0;
+      let crossWordsScore = 0;
+
       tilesToPlace.forEach(tile => {
         const boardTile = gameState.board[tile.r][tile.c];
-        const baseVal = tile.isJoker ? 0 : LETTER_POINTS[tile.letter] || 1;
+        const baseVal = tile.isJoker ? 0 : (LETTER_POINTS[tile.letter] || 1);
         const mult = getCellMultiplier(tile.r, tile.c);
+        
         if (!boardTile.letter) {
           newlyPlacedCount++;
-          if (mult.type === 'x2_letter') total += baseVal * 2; else if (mult.type === 'x3_letter') total += baseVal * 3; else total += baseVal;
-          if (mult.type === 'x2_word') wordMult *= 2; else if (mult.type === 'x3_word') wordMult *= 3;
-        } else { total += baseVal; }
+          let letterScore = baseVal;
+          if (mult.type === 'x2_letter') letterScore *= 2;
+          else if (mult.type === 'x3_letter') letterScore *= 3;
+          
+          mainWordScore += letterScore;
+          
+          // ТРЕБОВАНИЕ 1: Сложение множителей слова (x3 + x3 = x6)
+          if (mult.type === 'x2_word') mainWordMult += 2;
+          else if (mult.type === 'x3_word') mainWordMult += 3;
+
+          // РАСЧЕТ ОЧКОВ ЗА ПЕРЕКРЕСТНЫЕ СЛОВА
+          const cw = dir === 'H' ? getVerticalWordAt(tile.r, tile.c, tile.letter) : getHorizontalWordAt(tile.r, tile.c, tile.letter);
+          if (cw.length > 1) {
+            let cwScore = 0;
+            let cwMult = 0;
+            if (mult.type === 'x2_word') cwMult += 2;
+            if (mult.type === 'x3_word') cwMult += 3;
+
+            let stR = tile.r, enR = tile.r, stC = tile.c, enC = tile.c;
+            if (dir === 'H') {
+              while (stR > 0 && gameState.board[stR-1][tile.c].letter) stR--;
+              while (enR < 14 && gameState.board[enR+1][tile.c].letter) enR++;
+              for (let x = stR; x <= enR; x++) {
+                if (x === tile.r) cwScore += letterScore;
+                else cwScore += gameState.board[x][tile.c].isJoker ? 0 : (LETTER_POINTS[gameState.board[x][tile.c].letter] || 1);
+              }
+            } else {
+              while (stC > 0 && gameState.board[tile.r][stC-1].letter) stC--;
+              while (enC < 14 && gameState.board[tile.r][enC+1].letter) enC++;
+              for (let x = stC; x <= enC; x++) {
+                if (x === tile.c) cwScore += letterScore;
+                else cwScore += gameState.board[tile.r][x].isJoker ? 0 : (LETTER_POINTS[gameState.board[tile.r][x].letter] || 1);
+              }
+            }
+            crossWordsScore += cwScore * (cwMult > 0 ? cwMult : 1);
+          }
+        } else {
+          mainWordScore += baseVal;
+        }
       });
-      total *= wordMult;
+      
+      let total = mainWordScore * (mainWordMult > 0 ? mainWordMult : 1) + crossWordsScore;
       if (newlyPlacedCount === 7) total += 15;
       return { total, newlyPlacedCount }; 
     }
 
+    // ТРЕБОВАНИЕ 2: Стратегическая оценка угловых полей
     function getTacticalPenalty(tilesToPlace, board) {
         let penalty = 0; let opened = [];
+        const HARD_LETTERS = ['Ь', 'Ъ', 'Ы', 'Й', 'Ц', 'Щ', 'Ф', 'Ч', 'Ю', 'Ж', 'Ш', 'З'];
+
         tilesToPlace.forEach(tile => {
+            const isCorner = (tile.r === 0 || tile.r === 14) && (tile.c === 0 || tile.c === 14);
+            if (isCorner) {
+                if (HARD_LETTERS.includes(tile.letter)) {
+                    penalty -= 25; // Бонус за блок угла
+                    opened.push(`🛡️ Блок угла ('${tile.letter}')`);
+                } else {
+                    penalty += 30; // Жесткий штраф за открытый угол
+                    opened.push(`⚠️ Опасный угол ('${tile.letter}')`);
+                }
+            }
+
             if (board[tile.r][tile.c].letter !== '') return;
             const neighbors = [ [tile.r - 1, tile.c], [tile.r + 1, tile.c], [tile.r, tile.c - 1], [tile.r, tile.c + 1] ];
             neighbors.forEach(([nr, nc]) => {
@@ -782,8 +836,8 @@
                     const isPartofNewWord = tilesToPlace.some(t => t.r === nr && t.c === nc);
                     if (!isPartofNewWord && board[nr][nc].letter === '') {
                         const mult = getCellMultiplier(nr, nc);
-                        if (mult.type === 'x3_word') { penalty += 15; opened.push('x3 Слово'); }
-                        else if (mult.type === 'x2_word') { penalty += 8; opened.push('x2 Слово'); }
+                        if (mult.type === 'x3_word') { penalty += 15; opened.push('Открыто x3 Слово'); }
+                        else if (mult.type === 'x2_word') { penalty += 8; opened.push('Открыто x2 Слово'); }
                     }
                 }
             });
@@ -833,7 +887,6 @@
       for (let idx = 0; idx < word.length; idx++) {
         const currR = dir === 'H' ? r : r + idx; const currC = dir === 'H' ? c + idx : c;
         const boardTile = gameState.board[currR][currC];
-        // JOKER FIX: Is already on the board as a joker? Keep it.
         const isJoker = boardTile.letter ? boardTile.isJoker : (formResult.jokersRequired.some(x => x.pos === idx) || formResult.jokersUsedFromRack.some(x => x.pos === idx)); 
         const letterVal = LETTER_POINTS[word[idx]] || 0;
         const mult = getCellMultiplier(currR, currC);
@@ -843,7 +896,7 @@
         tilesToPlace.push({ r: currR, c: currC, letter: word[idx], isJoker });
       }
 
-      const scoreObj = calculateSpecificMoveScore(tilesToPlace);
+      const scoreObj = calculateSpecificMoveScore(tilesToPlace, dir);
       const tactical = getTacticalPenalty(tilesToPlace, gameState.board);
       const finalSortScore = scoreObj.total - tactical.penalty;
 
@@ -860,13 +913,21 @@
       for (let r = 0; r < 15; r++) { for (let c = 0; c < 15; c++) { if (gameState.board[r][c].letter) { isFirstMove = false; break; } } }
       
       const anchorPoints = [];
-      if (isFirstMove) { anchorPoints.push({ r: 7, c: 7, isCenter: true }); } 
-      else {
+      if (isFirstMove) { 
+        anchorPoints.push({ r: 7, c: 7, isLetter: false }); 
+      } else {
+        // ТРЕБОВАНИЕ 3: Глубокие пересечения. Ищем по ВСЕМ буквам на доске, а не только по пустым клеткам!
         for (let r = 0; r < 15; r++) {
           for (let c = 0; c < 15; c++) {
-            if (gameState.board[r][c].letter) continue;
-            const hasNeighbor = (r > 0 && gameState.board[r-1][c].letter !== '') || (r < 14 && gameState.board[r+1][c].letter !== '') || (c > 0 && gameState.board[r][c-1].letter !== '') || (c < 14 && gameState.board[r][c+1].letter !== '');
-            if (hasNeighbor) anchorPoints.push({ r, c });
+            if (gameState.board[r][c].letter) {
+                anchorPoints.push({ r, c, isLetter: true, letter: gameState.board[r][c].letter });
+            } else {
+                const hasNeighbor = (r > 0 && gameState.board[r-1][c].letter !== '') || 
+                                    (r < 14 && gameState.board[r+1][c].letter !== '') || 
+                                    (c > 0 && gameState.board[r][c-1].letter !== '') || 
+                                    (c < 14 && gameState.board[r][c+1].letter !== '');
+                if (hasNeighbor) anchorPoints.push({ r, c, isLetter: false });
+            }
           }
         }
       }
@@ -874,32 +935,47 @@
       const potentialWords = [];
       const rackLetters = gameState.rack.filter(l => l !== '*');
       const rackJokersCount = gameState.rack.filter(l => l === '*').length;
-      const maxMissingLetters = rackJokersCount + 2; 
-
-      const rackFreq = {}; for (const l of rackLetters) rackFreq[l] = (rackFreq[l] || 0) + 1;
+      const rackFreq = {}; 
+      for (const l of rackLetters) rackFreq[l] = (rackFreq[l] || 0) + 1;
+      
       const boardLettersFreq = {};
+      let boardHasLetters = false;
       for (let r = 0; r < 15; r++) {
         for (let c = 0; c < 15; c++) {
           const l = gameState.board[r][c].letter;
-          if (l) boardLettersFreq[l] = (boardLettersFreq[l] || 0) + 1;
+          if (l) { boardLettersFreq[l] = (boardLettersFreq[l] || 0) + 1; boardHasLetters = true; }
         }
       }
 
       DICTIONARY.forEach(word => {
         if (word.length < 2 || word.length > 15) return;
+        if (boardHasLetters) {
+          let hasOverlap = false;
+          for (let i = 0; i < word.length; i++) { if (boardLettersFreq[word[i]]) { hasOverlap = true; break; } }
+          if (!hasOverlap) return;
+        }
         const wordFreq = {};
         for (let i = 0; i < word.length; i++) wordFreq[word[i]] = (wordFreq[word[i]] || 0) + 1;
+        
         let missingLettersCount = 0;
         for (const l in wordFreq) {
-          const needed = wordFreq[l]; const onRack = rackFreq[l] || 0; const onBoard = boardLettersFreq[l] || 0;
-          if (needed > onRack) missingLettersCount += (needed - onRack) - Math.min(needed - onRack, onBoard);
+          const needed = wordFreq[l];
+          const onRack = rackFreq[l] || 0;
+          const onBoard = boardLettersFreq[l] || 0;
+          if (needed > onRack + onBoard) {
+              missingLettersCount += (needed - (onRack + onBoard));
+          }
         }
-        if (missingLettersCount <= maxMissingLetters) potentialWords.push(word);
+        if (missingLettersCount <= rackJokersCount + 2) {
+            potentialWords.push(word);
+        }
       });
 
       potentialWords.forEach(word => {
         anchorPoints.forEach(anchor => {
           for (let i = 0; i < word.length; i++) {
+            if (anchor.isLetter && word[i] !== anchor.letter) continue;
+
             const startH_C = anchor.c - i;
             if (startH_C >= 0 && startH_C + word.length <= 15) evaluateAndPushCandidate(word, anchor.r, startH_C, 'H', candidates, isFirstMove);
             const startV_R = anchor.r - i;
@@ -914,7 +990,6 @@
         if (!seen.has(key)) { seen.add(key); uniqueCandidates.push(cand); }
       });
 
-      // РЕШЕНИЕ ПРОБЛЕМЫ БЕСПЛАТНЫХ СЛОВ: Разделяем списки
       const freeWords = uniqueCandidates.filter(c => c.requireJokers === 0);
       const jokerWords = uniqueCandidates.filter(c => c.requireJokers > 0);
 
@@ -925,11 +1000,9 @@
       const topJokers = jokerWords.slice(0, 100);
       const combinedTop = [...topFree, ...topJokers];
 
-      // Оцениваем риски достройки ТОЛЬКО для финального топа
       combinedTop.forEach(cand => { 
         cand.risks = analyzeExtensionRisks(cand.word, cand.r, cand.c, cand.dir); 
         if (cand.risks.length > 0) {
-            // Штрафуем рейтинг хода на потенциал соперника
             cand.sortScore -= cand.risks[0].scoreImpact;
         }
       });
@@ -948,13 +1021,10 @@
         const idx = dictWord.indexOf(word);
         if (idx !== -1) {
           const prefix = dictWord.slice(0, idx); const suffix = dictWord.slice(idx + word.length);
-          
-          // ЗАЩИТА 1: Соперник имеет только 7 фишек!
           if (prefix.length + suffix.length > 7) return;
 
           let isPhysicallyPossible = true;
 
-          // ЗАЩИТА 2: Проверяем физическое свободное место на доске для префикса (и что он не упрется)
           if (prefix.length > 0) {
             for (let i = 1; i <= prefix.length; i++) {
               const testR = dir === 'H' ? r : r - i; const testC = dir === 'H' ? c - i : c;
@@ -967,7 +1037,6 @@
             }
           }
 
-          // ЗАЩИТА 3: Проверяем физическое место для суффикса (и что он не упрется)
           if (isPhysicallyPossible && suffix.length > 0) {
             const wordEndOffset = word.length;
             for (let i = 0; i < suffix.length; i++) {
@@ -991,7 +1060,7 @@
 
     function calculatePotentialOpponentPoints(dictWord, prefix, suffix, r, c, dir, matchIdx) {
       const startR = dir === 'H' ? r : r - prefix.length; const startC = dir === 'H' ? c - prefix.length : c;
-      let score = 0; let wordMult = 1;
+      let score = 0; let wordMultSum = 0;
       for (let i = 0; i < dictWord.length; i++) {
         const currR = dir === 'H' ? startR : startR + i; const currC = dir === 'H' ? startC + i : startC;
         const wordLength = dictWord.length - prefix.length - suffix.length;
@@ -1001,10 +1070,10 @@
         if (isAlreadyOnBoard) { score += letterVal; } 
         else {
           if (mult.type === 'x2_letter') score += letterVal * 2; else if (mult.type === 'x3_letter') score += letterVal * 3; else score += letterVal;
-          if (mult.type === 'x2_word') wordMult *= 2; else if (mult.type === 'x3_word') wordMult *= 3;
+          if (mult.type === 'x2_word') wordMultSum += 2; else if (mult.type === 'x3_word') wordMultSum += 3;
         }
       }
-      return score * wordMult;
+      return score * (wordMultSum > 0 ? wordMultSum : 1);
     }
 
     function setSuggestionsFilter(filterType) {
@@ -1066,9 +1135,11 @@
         }
 
         if (cand.openedPremium && cand.openedPremium.length > 0) {
-          const tacLine = document.createElement('div'); tacLine.className = 'mt-1.5 text-[10px] text-rose-400 font-semibold flex items-center space-x-1 bg-rose-950/20 px-2 py-1 rounded w-max border border-rose-900/30';
-          tacLine.innerHTML = `<i data-lucide="crosshair" class="w-3 h-3 text-rose-500 animate-pulse"></i> <span>⚠️ Опасно: вы открываете доступ к ${cand.openedPremium.join(', ')}</span>`; 
-          div.appendChild(tacLine);
+          const isBonus = cand.openedPremium.some(x => x.includes('🛡️'));
+          const t = document.createElement('div'); 
+          t.className = `mt-1.5 text-[10px] ${isBonus ? 'text-emerald-400 bg-emerald-950/20 border-emerald-900/30' : 'text-rose-400 bg-rose-950/20 border-rose-900/30'} font-semibold flex items-center space-x-1 px-2 py-1 rounded w-max border`;
+          t.innerHTML = `<span>${isBonus ? '' : '⚠️'} Стратегия: ${cand.openedPremium.join(', ')}</span>`; 
+          div.appendChild(t);
         }
 
         if (isJokerDeal) {
@@ -1178,7 +1249,6 @@
         const currR = dir === 'H' ? r : r + i; const currC = dir === 'H' ? c + i : c;
         const letter = word[i];
         const boardTile = gameState.board[currR][currC];
-        // JOKER FIX: Is already on the board as a joker? Keep it.
         const isJoker = boardTile.letter ? boardTile.isJoker : allJokers.includes(i);
         wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker });
       }
@@ -1249,13 +1319,12 @@
         const currR = dir === 'H' ? r : r + i; const currC = dir === 'H' ? c + i : c;
         const letter = word[i];
         const boardTile = gameState.board[currR][currC];
-        // JOKER FIX
         const isJoker = boardTile.letter ? boardTile.isJoker : jokers.includes(i);
         if (boardTile.letter && boardTile.letter !== letter) return showToast(`Конфликт букв в клетке ${COL_LABELS[currC]}${currR+1}: на доске '${boardTile.letter}', вы ставите '${letter}'`, 'error');
         wordTilesToPlace.push({ r: currR, c: currC, letter, isJoker }); boardLettersNeed.push(boardTile.letter || null);
       }
 
-      const scoreObj = calculateSpecificMoveScore(wordTilesToPlace);
+      const scoreObj = calculateSpecificMoveScore(wordTilesToPlace, dir);
       const score = scoreObj.total;
 
       let turnOrderIssue = false;
@@ -1359,12 +1428,11 @@
         const wordTilesToPlace = [];
         for (let i = 0; i < item.word.length; i++) {
           const currR = item.dir === 'H' ? item.r : item.r + i; const currC = item.dir === 'H' ? item.c + i : item.c;
-          // JOKER FIX IN UNDO
           const boardTile = gameState.board[currR][currC];
           const isJoker = boardTile.letter ? boardTile.isJoker : item.jokers.includes(i);
           wordTilesToPlace.push({ r: currR, c: currC, letter: item.word[i], isJoker });
         }
-        const scoreObj = calculateSpecificMoveScore(wordTilesToPlace);
+        const scoreObj = calculateSpecificMoveScore(wordTilesToPlace, item.dir);
         wordTilesToPlace.forEach(tile => { gameState.board[tile.r][tile.c] = { letter: tile.letter, isJoker: tile.isJoker, isNew: false }; });
         if (item.player === 'player') gameState.playerScore += scoreObj.total; else gameState.opponentScore += scoreObj.total;
       });
