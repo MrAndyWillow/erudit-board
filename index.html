@@ -2264,7 +2264,7 @@
     };
 
     async function tryFetchExternalDictionaries() {
-      const filesToTry = ['nouns.txt', 'dictionary.txt'];
+      const filesToTry = ['russian_words_nouns.txt', 'dictionary.txt'];
       for (const fileName of filesToTry) {
         try {
           const response = await fetch(fileName);
