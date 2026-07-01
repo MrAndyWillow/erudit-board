@@ -140,20 +140,6 @@
             osc.start(now + idx * 0.15);
             osc.stop(now + idx * 0.15 + 0.22);
           });
-        } else if (type === 'block') {
-          const now = ctx.currentTime;
-          [494, 622].forEach((freq, idx) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + idx * 0.09);
-            gain.gain.setValueAtTime(0.12, now + idx * 0.09);
-            gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.09 + 0.18);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(now + idx * 0.09);
-            osc.stop(now + idx * 0.09 + 0.18);
-          });
         }
       } catch (e) {}
     };
@@ -172,16 +158,15 @@
       'А': 10, 'Б': 3, 'В': 5, 'Г': 3, 'Д': 5, 'Е': 9, 'Ж': 1, 'З': 2, 'И': 9, 'Й': 2, 'К': 6, 'Л': 5, 'М': 4, 'Н': 8, 'О': 10, 'П': 5, 'Р': 6, 'С': 6, 'Т': 6, 'У': 3, 'Ф': 1, 'Х': 1, 'Ц': 1, 'Ч': 2, 'Ш': 1, 'Щ': 1, 'Ъ': 1, 'Ы': 1, 'Ь': 2, 'Э': 1, 'Ю': 1, 'Я': 2, '*': 4
     };
 
-    // Built-in strategic Russian words (Fallback)
     const BUILTIN_WORDS = [
-      'АКТ','АКТЕР','АЛЬБОМ','АПЕЛЬСИН','АРБУЗ','АРМИЯ','АДРЕС','АВТОР','АКТЕР','БАГАЖ','БАНК','БАНАН','БАРАН','БАРСУК','БАШНЯ','БЕГЕМОТ','БЕЛКА','БЕРЕГ','БЕРЕЗА','БИЛЕТ','БИНОКЛЬ','БЛИН','БЛОКНОТ','БОБР','БОКАЛ','БОЛОТО','БОЧКА','БРАТ','БРЮКИ','БУМАГА','БУТЫЛКА','БУБЕН','БУДКА','БУРЯ','БЫК',
+      'АКТ','АКТЕР','АЛЬБОМ','АПЕЛЬСИН','АРБУЗ','АРМИЯ','АДРЕС','АВТОР','БАГАЖ','БАНК','БАНАН','БАРАН','БАРСУК','БАШНЯ','БЕГЕМОТ','БЕЛКА','БЕРЕГ','БЕРЕЗА','БИЛЕТ','БИНОКЛЬ','БЛИН','БЛОКНОТ','БОБР','БОКАЛ','БОЛОТО','БОЧКА','БРАТ','БРЮКИ','БУМАГА','БУТЫЛКА','БУБЕН','БУДКА','БУРЯ','БЫК',
       'ВАГОН','ВАЗА','ВАРЕНЬЕ','ВАСИЛЕК','ВЕЛОСИПЕД','ВЕНИК','ВЕРБЛЮД','ВЕРТОЛЕТ','ВЕТЕР','ВЕТКА','ВЕЧЕР','ВИЛКА','ВИШНЯ','ВОДА','ВОЗДУХ','ВОЛК','ВОРОБЕЙ','ВОРОНА','ВОРОТА','ВРАЧ','ВРЕМЯ','ВУЛКАН','ВЫДРА','ВЬЮГА',
       'ГАЗЕТА','ГАЙКА','ГВОЗДЬ','ГЕОЛОГ','ГЕРОЙ','ГИТАРА','ГЛАЗ','ГЛИНА','ГЛОБУС','ГНЕЗДО','ГНОМ','ГОЛУБЬ','ГОРА','ГОРОД','ГОРОХ','ГРИБ','ГРОЗА','ГРУША','ГРЯДКА','ГУСЬ',
       'ДВЕРЬ','ДВОР','ДЕВОЧКА','ДЕДУШКА','ДЕЛЬФИН','ДЕНЬ','ДЕРЕВО','ДИВАН','ДОЖДЬ','ДОКТОР','ДОМ','ДОРОГА','ДОЧЬ','ДРАКОН','ДРОВА','ДРУГ','ДУБ','ДУШ','ДЫМ','ДЫНЯ','ДЯТЕЛ','ЕЖ','ЕЛЬ','ЕНОТ','ЖАБА','ЖАСМИН','ЖЕЛУДЬ','ЖЕЛЕЗО','ЖЕНЩИНА','ЖИВОТНОЕ','ЖИРАФ','ЖУК',
       'ЗАБОР','ЗАВОД','ЗАВТРАК','ЗАЙЧИК','ЗАМОК','ЗАПИСЬ','ЗАРЯ','ЗВЕЗДА','ЗВЕРЬ','ЗВОНОК','ЗЕБРА','ЗЕМЛЯ','ЗЕМЛЯНИКА','ЗИМА','ЗОНТИК','ЗУБ','ЗУБР','ИГОЛКА','ИГРА','ИГРУШКА','ИЗБА','ИЗЮМ','ИКОНА','ИКРА','ИЛ','ИМЯ','ИНДЮК','ИРИС','ИСКРА',
-      'КАБАН','КАБИНЕТ','КАКТУС','КАЛЕНДАРЬ','КАЛИНА','КАМЕНЬ','КАМЫШ','КАНАЛ','КАПУСТА','КАРАНДАШ','КАРТА','КАРТИНА','КАРТОФЕЛЬ','КАРУСЕЛЬ','КАССА','КАСТРЮЛЯ','КАТЕР','КАША','КАШТАН','КВАДРАТ','КВАРТИРА','КИВИ','КИНЖАЛ','КИНО','КИСЕЛЬ','КИТ','КЛАД','КЛАСС','КЛЕЙ','КЛЕН','КЛЕТКА','КЛУБНИКА','КЛЮВ','КЛЮЧ','КЛЯКСА','КНИГА','КНОПКА','КОВЕР','КОВШ','КОЗА','КОЗЕЛ','КОЛЕСО','КОЛОКОЛ','КОЛОС','КОЛПАК','КОМАР','КОМНАТА','КОМПАС','КОМПЬЮТЕР','КОНФЕТА','КОНЬ','КОНЬКИ','КОПЫТО','КОРАБЛЬ','КОРЗИНА','КОРОБКА','КОРОВА','КОРОНА','КОРОЛЬ','КОРШУН','КОСМОС','КОСТЕР','КОСТЬ','КОТ','КОТЕЛ','КОШКА','КРАБ','КРАН','КРАПИВА','КРАСКА','КРОВАТЬ','КРОКОДИЛ','КРОЛИК','КРОТ','КРУЖКА','КРЫША','КРЫСА','КУБИК','КУВШИН','КУЗНЕЧИК','КУКЛА','КУКУШКА','КУКУРУЗА','КУНИЦА','КУПЕ','КУРИЦА','КУРТКА','КУСТ','КУХНЯ',
+      'КАБАН','КАБИНЕТ','КАКТУС','КАЛЕНДАРЬ','КАЛИНА','КАМЕНЬ','КАМЫШ','КАНАЛ','КАПУСТА','КАРАНДАШ','КАРТА','КАРТИНА','КАРТОФЕЛЬ','КАРУСЕЛЬ','КАССА','КАСТРЮЛЯ','КАТЕР','КАША','КАШТАН','КВАДРАТ','КВАРТИРА','КИВИ','КИНЖАЛ','КИНО','КИСЕЛЬ','КИТ','КЛАД','КЛАСС','КЛЕЙ','КЛЕН','КЛЕТКА','КЛУБНИКА','КЛЮВ','КЛЮЧ','КЛЯКСА','КНИГА','КНОПКА','КОВЕР','КОВШ','КОЗА','КОЗЕЛ','КОЛЕСО','КОЛОКОЛ','КОЛОС','КОЛПАК','КОМАР','КОМНАТА','КОМПАС','КОМПЬЮТЕР','КОНФЕТА','КОНЬ','КОНЬКИ','КОПЫТО','КОРАБЛЬ','КОРЗИА','КОРОБКА','КОРОВА','КОРОНА','КОРОЛЬ','КОРШУН','КОСМОС','КОСТЕР','КОСТЬ','КОТ','КОТЕЛ','КОШКА','КРАБ','КРАН','КРАПИВА','КРАСКА','КРОВАТЬ','КРОКОДИЛ','КРОЛИК','КРОТ','КРУЖКА','КРЫША','КРЫСА','КУБИК','КУВШИН','КУЗНЕЧИК','КУКЛА','КУКУШКА','КУКУРУЗА','КУНИЦА','КУПЕ','КУРИЦА','КУРТКА','КУСТ','КУХНЯ',
       'ЛАВКА','ЛАДЬЯ','ЛАМПА','ЛАНДЫШ','ЛАПА','ЛАПША','ЛАСТОЧКА','ЛЕБЕДЬ','ЛЕВ','ЛЕЙКА','ЛЕКАРСТВО','ЛЕНТА','ЛЕС','ЛЕСНИК','ЛЕСТНИЦА','ЛЕТО','ЛИЛИЯ','ЛИМОН','ЛИНЕЙКА','ЛИСА','ЛИСТ','ЛИФТ','ЛОДКА','ЛОЖКА','ЛОПАТА','ЛОСЬ','ЛОШАДЬ','ЛУЖА','ЛУК','ЛУНА','ЛУЧ','ЛЫЖИ','ЛЮБОВЬ','ЛЮСТРА','ЛЯГУШКА',
-      'МАГАЗИН','МАГНИТ','МАЛИНА','МАЛЫШ','МАМА','МАНДАРИН','МАРКА','МАСЛО','МАШИНА','МАЯК','МЕДВЕДЬ','МЕД','МЕДУЗА','МЕЛ','МЕЛЬНИЦА','МЕТРО','МЕТЛА','МЕЧ','МЕШОК','МИНУТА','МИСКА','МИШКА','МОЛНИЯ','МОЛОКО','МОЛОТОК','МОРЕ','МОРКОВЬ','МОРОЗ','МОРОЖЕНОЕ','МОСТ','МУЖЧИНА','МУЗЕЙ','МУЗЫКА','МУРАВЕЙ','МУХА','МУХОМОР','Мыло','МЫШКА','МЯЧ','МЯСО',
+      'МАГАЗИН','МАГНИТ','МАЛИНА','МАЛЫШ','МАМА','МАНДАРИН','МАРКА','МАСЛО','МАШИНА','МАЯК','МЕДВЕДЬ','МЕД','МЕДУЗА','МЕЛ','МЕЛЬНИЦА','МЕТРО','МЕТЛА','МЕЧ','МЕШОК','МИНУТА','МИСКА','МИШКА','МОЛНИЯ','МОЛОКО','МОЛОТОК','МОРЕ','МОРКОВЬ','МОРОЗ','МОРОЖЕНОЕ','МОСТ','МУЖЧИНА','МУЗЕЙ','МУЗЫКА','МУРАВЕЙ','МУХА','МУХОМОР','МЫЛО','МЫШКА','МЯЧ','МЯСО',
       'НАГРАДА','НАПИТОК','НАРЯД','НАСЕКОМОЕ','НЕБО','НИТКА','НОГА','НОЖ','НОЖНИЦЫ','НОРА','НОС','НОСОРОГ','НОТЫ','НОЧЬ','ОБЕД','ОБЛАКО','ОБЕЗЬЯНА','ОБУВЬ','ОВОЩИ','ОВЦА','ОГОРОД','ОГОНЬ','ОГУРЕЦ','ОДЕЖДА','ОЗЕРО','ОКНО','ОКУНЬ','ОЛЕНЬ','ОДУВАНЧИК','ОПЕРА','ОРЕХ','ОРЕЛ','ОСА','ОСЕНЬ','ОСЛИК','ОСТРОВ','ОЧКИ',
       'ПАВЛИН','ПАКЕТ','ПАЛАТКА','ПАЛЬТО','ПАЛЬМА','ПАМЯТНИК','ПАУК','ПАУТИНА','ПЕКАРЬ','ПЕНАЛ','ПЕНЬ','ПЕПЕЛ','ПЕРСИК','ПЕСОК','ПЕСНЯ','ПЕТУХ','ПЕЧЕНЬЕ','ПЕЧКА','ПИВО','ПИНГВИН','ПИРОГ','ПИРОЖНОЕ','ПИСЬМО','ПЛАТЬЕ','ПЛАЩ','ПЛИТА','ПЛОЩАДЬ','ПОДАРОК','ПОДВАЛ','ПОДРУГА','ПОДУШКА','ПОЕЗД','ПОЖАР','ПОЛЕ','ПОЛКА','ПОМИДОР','ПОПУГАЙ','ПОРТФЕЛЬ','ПОСУДА','ПОЧТА','ПОЧКА','ПОЯС','ПРАЗДНИК','ПРУД','ПРЯНИК','ПТИЦА','ПУГОВИЦА','ПУЗЫРЬ','ПУСТЫНЯ','ПУШКА','ПЧЕЛА','ПЫЛЕСОС','ПЯТНО',
       'РАБОТА','РАВНИНА','РАДУГА','РАДИО','РАК','РАКЕТА','РАКУШКА','РАМА','РАНЕЦ','РЕКА','РЕМЕНЬ','РЕПА','РЕЧКА','РИС','РИСУНОК','РОГ','РОДИНА','РОЗА','РОМАШКА','РОТ','РОЩА','РУБАШКА','РУКА','РУЧКА','РУЧЕЙ','РЫБА','РЫСЬ','РЮКЗАК','РЯБИНА',
@@ -190,7 +175,7 @@
       'ФАКЕЛ','ФАРТУК','ФАСОЛЬ','ФЛАГ','ФЛАМИНГО','ФОНАРЬ','ФОТОГРАФИЯ','ФОНТАН','ФРУКТ','ХЛЕБ','ХЛОПОК','ХВОСТ','ХОККЕЙ','ХОЛМ','ХОМЯК','ЦАПЛЯ','ЦВЕТОК','ЦЕПЬ','ЦИРК','ЧАЙ','ЧАЙКА','ЧАСЫ','ЧАШКА','ЧЕЛОВЕК','ЧЕМОДАН','ЧЕРЕПАХА','ЧЕРНИКА','ЧЕСНОК','ЧИЖ',
       'ШАБЛОН','ШАГ','ШАЛФЕЙ','ШАПКА','ШАР','ШАРФ','ШАХМАТЫ','ШЕВЕЛЮРА','ШЕЯ','ШИНА','ШИШКА','ШКАФ','ШКОЛА','ШЛЯПА','ШМЕЛЬ','ШНУРОК','ШОКОЛАД','ШОФЕР','ШПАГА','ЩЕКА','ЩЕНОК','ЩЕТКА','ЩИТ','ЩУКА','ЭКРАН','ЭКСКУРСИЯ','ЭКСКАВАТОР','ЭЛЬФ','ЭНЕРГИЯ','ЭТАЖ','ЮБКА','ЮЛА','ЮМОР','ЮНГА','ЮРТА',
       'ЯБЛОКО','ЯГОДА','ЯД','ЯКОРЬ','ЯК','ЯМА','ЯНВАРЬ','ЯНТАРЬ','ЯРМАРКА','ЯСЕНЬ','ЯЩИК',
-      'АК','АН','АР','АС','БА','БО','БЫ','ВА','ВО','ГА','ГО','ДА','ДО','ДУ','ЕЖ','ЕЛ','ЗА','ИЛ','ИМ','ИС','ИХ','КО','ЛИ','ЛО','МУ','Мы','НА','НЕ','НО','НУ','ОБ','ОН','ОР','ОС','ОТ','ПА','ПО','РЕ','РО','СИ','СО','ТА','ТО','ТУ','ТЫ','УЖ','УМ','УС','УХ','ХА','ХО','ЧА','ЧУ','ША','ШИ','ЭХ','ЮГ','ЮЛ','ЯД','ЯК','ЯМ'
+      'АК','АН','АР','АС','БА','БО','БЫ','ВА','ВО','ГА','ГО','ДА','ДО','ДУ','ЕЖ','ЕЛ','ЗА','ИЛ','ИМ','ИС','ИХ','КО','ЛИ','ЛО','МУ','МЫ','НА','НЕ','НО','НУ','ОБ','ОН','ОР','ОС','ОТ','ПА','ПО','РЕ','РО','СИ','СО','ТА','ТО','ТУ','ТЫ','УЖ','УМ','УС','УХ','ХА','ХО','ЧА','ЧУ','ША','ШИ','ЭХ','ЮГ','ЮЛ','ЯД','ЯК','ЯМ'
     ];
 
     // --- COORD MULTIPLIERS GENERATION ---
@@ -240,6 +225,7 @@
       const [boardType, setBoardType] = useState('classic'); // 'classic' | 'alt'
       const [board, setBoard] = useState(() => Array(15).fill(null).map(() => Array(15).fill(null)));
       const [history, setHistory] = useState([]); // Undo history
+      const [movesList, setMovesList] = useState([]); // Game match timeline
       const [rack, setRack] = useState(''); // Current rack of up to 7 letters
       const [dictionary, setDictionary] = useState(BUILTIN_WORDS);
       const [dictSource, setDictSource] = useState('builtin'); // 'builtin' | 'external' | 'uploaded'
@@ -248,11 +234,12 @@
       const [burnedTiles, setBurnedTiles] = useState({}); // Burned letters to acquire extra jokers
       
       // UI State
-      const [activeTab, setActiveTab] = useState('board'); // 'board' | 'analysis' | 'stats'
+      const [activeTab, setActiveTab] = useState('board'); // 'board' | 'analysis' | 'stats' | 'timeline'
       const [selectedCell, setSelectedCell] = useState(null); // {r, c}
       const [hoveredSuggestion, setHoveredSuggestion] = useState(null); // Ghosted word
       const [isCalculating, setIsCalculating] = useState(false);
       const [suggestions, setSuggestions] = useState({ standard: [], tactical: [], jokerAssisted: [] });
+      const [sortBy, setSortBy] = useState('score'); // 'score' | 'tactical' | 'length'
       
       // Manual input state
       const [showManualModal, setShowManualModal] = useState(false);
@@ -261,6 +248,7 @@
       const [manualCol, setManualCol] = useState(7);
       const [manualDir, setManualDir] = useState('H'); // 'H' | 'V'
       const [manualPlayer, setManualPlayer] = useState('Соперник'); // 'Игрок' | 'Соперник'
+      const [manualScore, setManualScore] = useState(''); // Manual score override
 
       // PWA Prompt
       const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -339,8 +327,6 @@
           for (let c = 0; c < 15; c++) {
             const char = board[r][c];
             if (char) {
-              // Note: If it's a joker played as a letter, we subtract '*' if we know,
-              // but since standard game saves placed letter, we safely subtract the letter.
               if (currentCounts[char] > 0) currentCounts[char]--;
             }
           }
@@ -382,6 +368,17 @@
       // Check if board is completely empty
       const isBoardEmpty = boardLetters.size === 0;
 
+      // Cumulative Game Scores calculated in real-time from moves timeline
+      const gameScores = useMemo(() => {
+        let player = 0;
+        let opponent = 0;
+        movesList.forEach(m => {
+          if (m.player === 'Игрок') player += m.score;
+          else opponent += m.score;
+        });
+        return { player, opponent };
+      }, [movesList]);
+
       // --- WORD SEARCH & TACTICAL ANALYSIS ALGORITHM ---
       const calculateBestMoves = () => {
         if (!rack.trim()) {
@@ -394,8 +391,6 @@
           const rackChars = rack.toUpperCase().split('');
           const candidates = [];
 
-          // 1. Pre-filter words from dictionary that are physically possible
-          // to build with rack letters + board letters + up to 3 extra jokers
           const boardLettersArray = Array.from(boardLetters);
           const rackLetterCounts = {};
           let rackJokers = 0;
@@ -404,9 +399,11 @@
             else rackLetterCounts[char] = (rackLetterCounts[char] || 0) + 1;
           });
 
-          // Optimizing lookup by keeping a pre-filtered list
+          // Pre-filter words to save CPU time
           const candidateWords = [];
           for (const word of dictionary) {
+            // Empty board limits first word to max 7 letters because no anchors exist
+            if (isBoardEmpty && word.length > 7) continue;
             if (word.length > 15) continue;
             
             let jokersNeeded = 0;
@@ -417,22 +414,20 @@
               if (tempCounts[char] && tempCounts[char] > 0) {
                 tempCounts[char]--;
               } else if (boardLetters.has(char)) {
-                // Letter exists somewhere on board, so word is potentially viable
+                // Potential attachment anchor
               } else {
                 jokersNeeded++;
               }
             }
 
-            // Max extra jokers we would allow a player to buy is 3
             if (jokersNeeded <= rackJokers + 3) {
               candidateWords.push({ word, baseJokersNeeded: jokersNeeded });
             }
           }
 
-          // 2. Exhaustive board scanning
           const foundPlays = [];
 
-          // Helper to trace vertical crossword
+          // Tracing vertical word formations
           const getVerticalCrossword = (row, col, newChar) => {
             let startRow = row;
             while (startRow > 0 && board[startRow - 1][col]) {
@@ -442,7 +437,7 @@
             while (endRow < 14 && board[endRow + 1][col]) {
               endRow++;
             }
-            if (startRow === endRow) return null; // No crossword, just our single tile
+            if (startRow === endRow) return null;
 
             let fullWord = '';
             for (let r = startRow; r <= endRow; r++) {
@@ -451,7 +446,7 @@
             return { word: fullWord, startRow, endRow };
           };
 
-          // Helper to trace horizontal crossword
+          // Tracing horizontal word formations
           const getHorizontalCrossword = (row, col, newChar) => {
             let startCol = col;
             while (startCol > 0 && board[row][startCol - 1]) {
@@ -470,12 +465,11 @@
             return { word: fullWord, startCol, endCol };
           };
 
-          // Evaluate horizontal placement
+          // Horizontal logic
           const checkHorizontalPlacement = (word, r, c) => {
             const L = word.length;
             if (c + L > 15) return;
 
-            // Strict boundary check: cell left and cell right must be empty
             if (c > 0 && board[r][c - 1]) return;
             if (c + L < 15 && board[r][c + L]) return;
 
@@ -491,10 +485,9 @@
               const targetChar = word[i];
 
               if (boardTile) {
-                if (boardTile !== targetChar) return; // Mismatch
+                if (boardTile !== targetChar) return;
                 intersects = true;
               } else {
-                // Check if adjacent to other tiles (touching anchor)
                 if (
                   (r > 0 && board[r - 1][col]) ||
                   (r < 14 && board[r + 1][col])
@@ -502,21 +495,18 @@
                   intersects = true;
                 }
 
-                // Consume letter from rack
                 const idx = tempRack.indexOf(targetChar);
                 if (idx !== -1) {
                   tempRack.splice(idx, 1);
                   usedRackTiles.push(targetChar);
                 } else {
-                  // Try to use a wildcard '*'
                   const starIdx = tempRack.indexOf('*');
                   if (starIdx !== -1) {
                     tempRack.splice(starIdx, 1);
                     usedRackTiles.push('*');
                     placementJokers.push({ index: i, char: targetChar });
                   } else {
-                    // Requires buying a joker
-                    usedRackTiles.push('💎'); // Mark as bought
+                    usedRackTiles.push('💎');
                     placementJokers.push({ index: i, char: targetChar, bought: true });
                   }
                 }
@@ -524,7 +514,9 @@
               }
             }
 
-            // Empty board constraint: must cross H8 (7,7)
+            // CRITICAL CONSTRAINT: A player CANNOT place more than 7 new tiles in a turn!
+            if (newlyPlaced > 7) return;
+
             if (isBoardEmpty) {
               const coversCenter = r === 7 && c <= 7 && c + L - 1 >= 7;
               if (!coversCenter) return;
@@ -533,23 +525,21 @@
 
             if (!intersects || newlyPlaced === 0) return;
 
-            // Verify all newly formed vertical crosswords are valid
             const crosswords = [];
             for (let i = 0; i < L; i++) {
               const col = c + i;
               if (!board[r][col]) {
                 const cross = getVerticalCrossword(r, col, word[i]);
                 if (cross) {
-                  if (!dictionarySet.has(cross.word)) return; // Invalid word!
+                  if (!dictionarySet.has(cross.word)) return;
                   crosswords.push({ ...cross, col });
                 }
               }
             }
 
-            // Total jokers needed
             const jokersNeeded = placementJokers.length;
 
-            // --- CALCULATE SCORE ---
+            // --- SCORE SCORING ---
             let wordMultiplierSum = 0;
             let baseWordScore = 0;
             let crosswordScoresTotal = 0;
@@ -569,8 +559,7 @@
                 if (mult === 'x2_word') wordMultiplierSum += 2;
                 if (mult === 'x3_word') wordMultiplierSum += 3;
 
-                const tileScore = letterValue * lMult;
-                baseWordScore += tileScore;
+                baseWordScore += letterValue * lMult;
               } else {
                 baseWordScore += letterValue;
               }
@@ -579,7 +568,6 @@
             const wordMultiplier = wordMultiplierSum > 0 ? wordMultiplierSum : 1;
             let finalWordScore = baseWordScore * wordMultiplier;
 
-            // Add crossword scores
             crosswords.forEach(cross => {
               let crossBase = 0;
               let crossMultSum = 0;
@@ -607,14 +595,13 @@
             });
 
             let finalMoveScore = finalWordScore + crosswordScoresTotal;
-            if (newlyPlaced === 7) finalMoveScore += 15; // 7-letter bonus
+            if (newlyPlaced === 7) finalMoveScore += 15;
 
-            // --- TACTICAL METRICS ---
+            // Tactical defensive assessment
             let sortScore = finalMoveScore;
             const defenseAlerts = [];
             const strategicBlocks = [];
 
-            // 1. Extension Risk Assessment (Can opponent build onto it?)
             const extensions = dictionary.filter(w => w.length > word.length && w.includes(word));
             let maxOpponentExtensionValue = 0;
             let dangerousExtension = null;
@@ -624,12 +611,10 @@
               const prependLen = idx;
               const appendLen = ext.length - word.length - idx;
 
-              // Check if space exists on the board to complete this extension
               const prependOk = prependLen === 0 || (c - prependLen >= 0 && Array(prependLen).fill(0).every((_, k) => !board[r][c - 1 - k]));
               const appendOk = appendLen === 0 || (c + L + appendLen <= 15 && Array(appendLen).fill(0).every((_, k) => !board[r][c + L + k]));
 
               if (prependOk && appendOk) {
-                // Estimate potential opponent score for doing this extension
                 let estVal = ext.split('').reduce((acc, ch) => acc + (LETTER_VALUES[ch] || 0), 0);
                 if (estVal > maxOpponentExtensionValue) {
                   maxOpponentExtensionValue = estVal;
@@ -639,11 +624,11 @@
             });
 
             if (maxOpponentExtensionValue > 15) {
-              sortScore -= (maxOpponentExtensionValue * 0.4); // Rating Penalty
+              sortScore -= (maxOpponentExtensionValue * 0.4);
               defenseAlerts.push(`Риск достройки до "${dangerousExtension}" (+${maxOpponentExtensionValue} очков сопернику)`);
             }
 
-            // 2. Corner Strategy Block Check (A1, A15, O1, O15)
+            // Corners Blockers
             const corners = [[0,0], [0,14], [14,0], [14,14]];
             const cornerBlockers = ['Ь', 'Ъ', 'Ы', 'Й', 'Ц', 'Щ', 'Ф', 'Ч', 'Ю', 'Ж', 'Ш', 'З'];
             const easyVowels = ['А', 'О', 'Е', 'И', 'Н'];
@@ -654,10 +639,10 @@
               if (isCorner && !board[r][col]) {
                 const char = word[i];
                 if (cornerBlockers.includes(char)) {
-                  sortScore += 25; // Bonus
-                  strategicBlocks.push(`🛡️ Угловой блок: "${char}" надежно перекрывает доступ к x3 слово`);
+                  sortScore += 25;
+                  strategicBlocks.push(`🛡️ Угловой блок: "${char}" перекрывает доступ к x3 слово`);
                 } else if (easyVowels.includes(char)) {
-                  sortScore -= 30; // Strong penalty
+                  sortScore -= 30;
                   defenseAlerts.push(`⚠️ Риск: гласная "${char}" в углу открывает сопернику путь к x3 слово`);
                 }
               }
@@ -678,12 +663,11 @@
             });
           };
 
-          // Evaluate vertical placement (transpose logic)
+          // Vertical logic
           const checkVerticalPlacement = (word, r, c) => {
             const L = word.length;
             if (r + L > 15) return;
 
-            // Boundary checks
             if (r > 0 && board[r - 1][c]) return;
             if (r + L < 15 && board[r + L][c]) return;
 
@@ -728,6 +712,9 @@
               }
             }
 
+            // CRITICAL CONSTRAINT: A player CANNOT place more than 7 new tiles in a turn!
+            if (newlyPlaced > 7) return;
+
             if (isBoardEmpty) {
               const coversCenter = c === 7 && r <= 7 && r + L - 1 >= 7;
               if (!coversCenter) return;
@@ -736,7 +723,6 @@
 
             if (!intersects || newlyPlaced === 0) return;
 
-            // Verify horizontal crosswords are valid
             const crosswords = [];
             for (let i = 0; i < L; i++) {
               const row = r + i;
@@ -751,7 +737,6 @@
 
             const jokersNeeded = placementJokers.length;
 
-            // Score vertical placement
             let wordMultiplierSum = 0;
             let baseWordScore = 0;
             let crosswordScoresTotal = 0;
@@ -771,8 +756,7 @@
                 if (mult === 'x2_word') wordMultiplierSum += 2;
                 if (mult === 'x3_word') wordMultiplierSum += 3;
 
-                const tileScore = letterValue * lMult;
-                baseWordScore += tileScore;
+                baseWordScore += letterValue * lMult;
               } else {
                 baseWordScore += letterValue;
               }
@@ -810,12 +794,10 @@
             let finalMoveScore = finalWordScore + crosswordScoresTotal;
             if (newlyPlaced === 7) finalMoveScore += 15;
 
-            // Tactical analysis
             let sortScore = finalMoveScore;
             const defenseAlerts = [];
             const strategicBlocks = [];
 
-            // Extension Risk
             const extensions = dictionary.filter(w => w.length > word.length && w.includes(word));
             let maxOpponentExtensionValue = 0;
             let dangerousExtension = null;
@@ -842,7 +824,6 @@
               defenseAlerts.push(`Риск достройки до "${dangerousExtension}" (+${maxOpponentExtensionValue} очков сопернику)`);
             }
 
-            // Corners Strategic Block Check
             const corners = [[0,0], [0,14], [14,0], [14,14]];
             const cornerBlockers = ['Ь', 'Ъ', 'Ы', 'Й', 'Ц', 'Щ', 'Ф', 'Ч', 'Ю', 'Ж', 'Ш', 'З'];
             const easyVowels = ['А', 'О', 'Е', 'И', 'Н'];
@@ -854,7 +835,7 @@
                 const char = word[i];
                 if (cornerBlockers.includes(char)) {
                   sortScore += 25;
-                  strategicBlocks.push(`🛡️ Угловой блок: "${char}" надежно перекрывает доступ к x3 слово`);
+                  strategicBlocks.push(`🛡️ Угловой блок: "${char}" перекрывает доступ к x3 слово`);
                 } else if (easyVowels.includes(char)) {
                   sortScore -= 30;
                   defenseAlerts.push(`⚠️ Риск: гласная "${char}" в углу открывает сопернику путь к x3 слово`);
@@ -877,7 +858,6 @@
             });
           };
 
-          // Run checks across candidates
           candidateWords.forEach(({ word }) => {
             for (let r = 0; r < 15; r++) {
               for (let c = 0; c < 15; c++) {
@@ -887,107 +867,111 @@
             }
           });
 
-          // Sort and segment results
           const rackJokerCount = rackChars.filter(c => c === '*').length;
 
-          // Categorize Suggestions
-          const standard = foundPlays
-            .filter(p => p.jokersNeeded <= rackJokerCount)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 15);
-
-          const tactical = foundPlays
-            .filter(p => p.jokersNeeded <= rackJokerCount)
-            .sort((a, b) => b.sortScore - a.sortScore)
-            .slice(0, 15);
-
-          const jokerAssisted = foundPlays
-            .filter(p => p.jokersNeeded > rackJokerCount)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 15);
+          // Categorize suggestions
+          const standard = foundPlays.filter(p => p.jokersNeeded <= rackJokerCount);
+          const tactical = foundPlays.filter(p => p.jokersNeeded <= rackJokerCount);
+          const jokerAssisted = foundPlays.filter(p => p.jokersNeeded > rackJokerCount);
 
           setSuggestions({ standard, tactical, jokerAssisted });
           setIsCalculating(false);
           setActiveTab('analysis');
           playSound('success');
-          console.log(`Calculated in ${(performance.now() - startSearch).toFixed(1)}ms. Matches found: ${foundPlays.length}`);
+          console.log(`Calculated in ${(performance.now() - startSearch).toFixed(1)}ms. Moves: ${foundPlays.length}`);
         }, 50);
       };
 
       // --- PERSIST MOVE ON BOARD ---
-      const applyMove = (play) => {
+      const applyMove = (play, player = 'Игрок') => {
         playSound('tile');
         const newBoard = board.map(row => [...row]);
         const L = play.word.length;
 
-        // Save state in history for Undo
+        // Save history states for Undo
         setHistory(prev => [...prev, {
           board: board.map(row => [...row]),
           rack,
-          burnedTiles: { ...burnedTiles }
+          burnedTiles: { ...burnedTiles },
+          movesList: [...movesList]
         }]);
 
-        // Place on board
-        const newlyPlacedLetters = [];
+        // Place tiles on board
         for (let i = 0; i < L; i++) {
           const row = play.dir === 'H' ? play.row : play.row + i;
           const col = play.dir === 'H' ? play.col + i : play.col;
           if (!newBoard[row][col]) {
             newBoard[row][col] = play.word[i];
-            newlyPlacedLetters.push(play.word[i]);
           }
         }
 
         setBoard(newBoard);
 
-        // Consume letters from hand
-        let tempRack = rack.toUpperCase().split('');
-        const unusedBurned = { ...burnedTiles };
+        // Add to formal game match history logs
+        const colLetter = String.fromCharCode(65 + play.col);
+        const cellCoord = `${colLetter}${play.row + 1}`;
+        const newMoveObj = {
+          id: Date.now(),
+          player,
+          word: play.word,
+          coord: cellCoord,
+          dir: play.dir === 'H' ? 'Гориз.' : 'Верт.',
+          score: play.score,
+          newlyPlaced: play.newLettersCount || L,
+          timestamp: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        };
 
-        play.placementJokers.forEach(pj => {
-          if (pj.bought) {
-            // Need to burn a letter from hands to pay for extra joker
-            // Let's choose a heavy or unused letter automatically
-            const availableToBurn = tempRack.filter(c => c !== '*');
-            if (availableToBurn.length > 0) {
-              const burnTarget = availableToBurn[0];
-              const bIdx = tempRack.indexOf(burnTarget);
-              if (bIdx !== -1) {
-                tempRack.splice(bIdx, 1);
-                unusedBurned[burnTarget] = (unusedBurned[burnTarget] || 0) + 1;
+        setMovesList(prev => [...prev, newMoveObj]);
+
+        // Hand tile consumption logic for 'Игрок' only
+        if (player === 'Игрок') {
+          let tempRack = rack.toUpperCase().split('');
+          const unusedBurned = { ...burnedTiles };
+
+          if (play.placementJokers) {
+            play.placementJokers.forEach(pj => {
+              if (pj.bought) {
+                const availableToBurn = tempRack.filter(c => c !== '*');
+                if (availableToBurn.length > 0) {
+                  const burnTarget = availableToBurn[0];
+                  const bIdx = tempRack.indexOf(burnTarget);
+                  if (bIdx !== -1) {
+                    tempRack.splice(bIdx, 1);
+                    unusedBurned[burnTarget] = (unusedBurned[burnTarget] || 0) + 1;
+                  }
+                }
+              } else {
+                const sIdx = tempRack.indexOf('*');
+                if (sIdx !== -1) tempRack.splice(sIdx, 1);
+              }
+            });
+          }
+
+          play.word.split('').forEach((char, idx) => {
+            const row = play.dir === 'H' ? play.row : play.row + idx;
+            const col = play.dir === 'H' ? play.col + idx : play.col;
+            const isNew = !board[row][col];
+            const isJoker = play.placementJokers && play.placementJokers.some(pj => pj.index === idx);
+
+            if (isNew && !isJoker) {
+              const rIdx = tempRack.indexOf(char);
+              if (rIdx !== -1) {
+                tempRack.splice(rIdx, 1);
               }
             }
-          } else {
-            // Regular joker consumption
-            const sIdx = tempRack.indexOf('*');
-            if (sIdx !== -1) tempRack.splice(sIdx, 1);
-          }
-        });
+          });
 
-        // Consume normal letters
-        play.word.split('').forEach((char, idx) => {
-          const row = play.dir === 'H' ? play.row : play.row + idx;
-          const col = play.dir === 'H' ? play.col + idx : play.col;
-          const isNew = !board[row][col];
-          const isJoker = play.placementJokers.some(pj => pj.index === idx);
+          setRack(tempRack.join(''));
+          setBurnedTiles(unusedBurned);
+        }
 
-          if (isNew && !isJoker) {
-            const rIdx = tempRack.indexOf(char);
-            if (rIdx !== -1) {
-              tempRack.splice(rIdx, 1);
-            }
-          }
-        });
-
-        setRack(tempRack.join(''));
-        setBurnedTiles(unusedBurned);
         setHoveredSuggestion(null);
         setSelectedCell(null);
         setActiveTab('board');
         playSound('success');
       };
 
-      // Undo last change
+      // Undo last move completely
       const triggerUndo = () => {
         if (history.length === 0) return;
         playSound('click');
@@ -995,21 +979,23 @@
         setBoard(lastState.board);
         setRack(lastState.rack);
         setBurnedTiles(lastState.burnedTiles);
+        setMovesList(lastState.movesList);
         setHistory(prev => prev.slice(0, -1));
       };
 
-      // Reset Board totally
+      // Reset Match totally
       const resetBoard = () => {
-        if (confirm("Вы уверены, что хотите полностью очистить игровое поле?")) {
+        if (confirm("Вы уверены, что хотите полностью сбросить партию и очистить доску?")) {
           playSound('warning');
           setHistory([]);
+          setMovesList([]);
           setBoard(Array(15).fill(null).map(() => Array(15).fill(null)));
           setBurnedTiles({});
           setSuggestions({ standard: [], tactical: [], jokerAssisted: [] });
         }
       };
 
-      // Manual Move insertion via Dialog wizard
+      // Direct Wizard manual insertion from modal
       const submitManualMove = () => {
         const cleanedWord = manualWord.toUpperCase().trim();
         if (!cleanedWord || !/^[А-ЯЁ*]+$/.test(cleanedWord)) {
@@ -1017,49 +1003,50 @@
           return;
         }
 
-        playSound('tile');
+        const calculatedScore = parseInt(manualScore, 10) || cleanedWord.split('').reduce((acc, letter) => acc + (LETTER_VALUES[letter] || 0), 0);
+
         const playObj = {
           word: cleanedWord,
           row: manualRow,
           col: manualCol,
           dir: manualDir,
-          placementJokers: [] // Simple manual placing, no jokers tracking needed
+          score: calculatedScore,
+          placementJokers: [],
+          newLettersCount: cleanedWord.length
         };
 
-        applyMove(playObj);
+        applyMove(playObj, manualPlayer);
         setShowManualModal(false);
         setManualWord('');
+        setManualScore('');
       };
 
-      // Keyboard support for rack input
       const handleRackChange = (e) => {
         const value = e.target.value.toUpperCase().replace(/[^А-ЯЁ*]/g, '').slice(0, 7);
         setRack(value);
       };
 
-      // Filter dictionary for local list
-      const filteredDictList = useMemo(() => {
-        if (!searchQuery) return [];
-        const q = searchQuery.toUpperCase();
-        return dictionary.filter(w => w.startsWith(q)).slice(0, 100);
-      }, [dictionary, searchQuery]);
-
-      // Install App Action
-      const triggerInstall = async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          setDeferredPrompt(null);
-        }
-      };
-
-      // Convert indices to coordinate labels (A-O, 1-15)
       const getCoordLabel = (r, c) => {
         const colLetter = String.fromCharCode(65 + c);
         const rowNum = r + 1;
         return `${colLetter}${rowNum}`;
       };
+
+      // --- RECOMMENDATION RE-SORTING LOGIC ---
+      const sortedSuggestions = useMemo(() => {
+        const sorter = (a, b) => {
+          if (sortBy === 'score') return b.score - a.score;
+          if (sortBy === 'tactical') return b.sortScore - a.sortScore;
+          if (sortBy === 'length') return b.word.length - a.word.length;
+          return 0;
+        };
+
+        return {
+          standard: [...suggestions.standard].sort(sorter),
+          tactical: [...suggestions.tactical].sort(sorter),
+          jokerAssisted: [...suggestions.jokerAssisted].sort(sorter),
+        };
+      }, [suggestions, sortBy]);
 
       return (
         <div class="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between">
@@ -1076,13 +1063,24 @@
                   <h1 class="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
                     ЭРУДИТ <span class="text-brand-500 font-medium text-xs bg-brand-500/10 px-2 py-0.5 rounded-full border border-brand-500/20">ПОМОЩНИК PRO</span>
                   </h1>
-                  <p class="text-[11px] text-zinc-400">Интеллектуальная тактико-стратегическая доска</p>
+                  <p class="text-[11px] text-zinc-400">Интерактивный анализатор с детальной статистикой ходов</p>
                 </div>
               </div>
 
-              {/* Board switcher and controls */}
+              {/* Real-time SCORE BOARD Widget */}
+              <div class="flex items-center gap-4 bg-zinc-950/60 border border-zinc-800 px-4 py-1.5 rounded-2xl">
+                <div class="text-center">
+                  <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">ИГРОК</span>
+                  <span class="text-lg font-black text-brand-500">{gameScores.player}</span>
+                </div>
+                <div class="h-6 w-px bg-zinc-800"></div>
+                <div class="text-center">
+                  <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">СОПЕРНИК</span>
+                  <span class="text-lg font-black text-red-400">{gameScores.opponent}</span>
+                </div>
+              </div>
+
               <div class="flex flex-wrap items-center gap-2">
-                
                 <div class="bg-zinc-850 p-0.5 rounded-lg border border-zinc-800 flex">
                   <button 
                     onClick={() => { playSound('click'); setBoardType('classic'); }}
@@ -1098,23 +1096,10 @@
                   </button>
                 </div>
 
-                {/* Dictionary status info */}
-                <div class="flex items-center gap-2 text-xs bg-zinc-800/80 px-2.5 py-1 rounded-lg border border-zinc-700">
+                <div class="flex items-center gap-2 text-xs bg-zinc-800/85 px-2.5 py-1 rounded-lg border border-zinc-700">
                   <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span class="text-zinc-300 font-medium">
-                    Словарь: {dictionary.length.toLocaleString()} ({dictSource === 'builtin' ? 'Встроенный' : dictSource === 'external' ? 'Внешний' : 'Загружен'})
-                  </span>
+                  <span class="text-zinc-300 font-medium">Словарь: {dictionary.length.toLocaleString()}</span>
                 </div>
-
-                {deferredPrompt && (
-                  <button 
-                    onClick={triggerInstall}
-                    class="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-brand-500/15"
-                  >
-                    Установить PWA
-                  </button>
-                )}
-
               </div>
 
             </div>
@@ -1123,28 +1108,34 @@
           {/* --- MAIN CORE INTERFACE --- */}
           <main class="max-w-7xl mx-auto w-full px-4 py-4 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            {/* LEFT AREA: INTERACTIVE VISUAL GAME BOARD (7 columns on large screen) */}
+            {/* LEFT AREA: INTERACTIVE VISUAL GAME BOARD */}
             <section class="lg:col-span-7 flex flex-col gap-4">
               
-              {/* Responsive Tabs for Mobile Screen */}
+              {/* Tabs for small mobile screens */}
               <div class="flex lg:hidden bg-zinc-900 p-1 rounded-lg border border-zinc-800">
                 <button 
                   onClick={() => { playSound('click'); setActiveTab('board'); }}
                   class={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${activeTab === 'board' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-400'}`}
                 >
-                  Игровое Поле
+                  Поле
                 </button>
                 <button 
                   onClick={() => { playSound('click'); setActiveTab('analysis'); }}
                   class={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${activeTab === 'analysis' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-400'}`}
                 >
-                  🚀 Подсказки ({suggestions.standard.length + suggestions.tactical.length})
+                  🚀 Подсказки
+                </button>
+                <button 
+                  onClick={() => { playSound('click'); setActiveTab('timeline'); }}
+                  class={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${activeTab === 'timeline' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-400'}`}
+                >
+                  📝 Ходы ({movesList.length})
                 </button>
                 <button 
                   onClick={() => { playSound('click'); setActiveTab('stats'); }}
                   class={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${activeTab === 'stats' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-400'}`}
                 >
-                  📊 Мешок ({bagStatus.total} шт)
+                  📊 Мешок ({bagStatus.total})
                 </button>
               </div>
 
@@ -1152,33 +1143,29 @@
               <div class={`bg-zinc-900 rounded-2xl p-3 border border-zinc-800 shadow-xl ${activeTab === 'board' ? 'block' : 'hidden lg:block'}`}>
                 
                 <div class="aspect-square w-full max-w-full board-grid gap-1 relative">
-                  {/* Generate Coordinate Axis Headers */}
-                  {/* Top-left blank spacer */}
+                  
+                  {/* Column ID headers */}
                   <div class="flex items-center justify-center text-[9px] font-bold text-zinc-600 border-r border-b border-zinc-800/40 bg-zinc-950">
                     ID
                   </div>
-                  {/* Top Header Row (A-O or А-П) */}
                   {Array(15).fill(0).map((_, c) => (
-                    <div key={`col-head-${c}`} class="flex items-center justify-center text-[10px] font-bold text-zinc-500 border-b border-zinc-800 bg-zinc-950/50 uppercase">
+                    <div key={`col-h-${c}`} class="flex items-center justify-center text-[10px] font-bold text-zinc-500 border-b border-zinc-800 bg-zinc-950/50 uppercase">
                       {String.fromCharCode(65 + c)}
                     </div>
                   ))}
 
                   {/* Matrix Cells row-by-row */}
                   {Array(15).fill(0).map((_, r) => (
-                    <React.Fragment key={`row-frag-${r}`}>
-                      {/* Left Header Row (1-15) */}
+                    <React.Fragment key={`row-fr-${r}`}>
                       <div class="flex items-center justify-center text-[10px] font-bold text-zinc-500 border-r border-zinc-800 bg-zinc-950/50">
                         {r + 1}
                       </div>
 
-                      {/* 15 Cells */}
                       {Array(15).fill(0).map((_, c) => {
                         const tileLetter = board[r][c];
                         const multiplierType = activeMultipliers[`${r},${c}`];
                         const isCenter = r === 7 && c === 7;
                         
-                        // Check if this cell contains a ghost letter being previewed via Hover/Click
                         let ghostLetter = null;
                         if (hoveredSuggestion) {
                           const { row, col, dir, word } = hoveredSuggestion;
@@ -1190,7 +1177,6 @@
                           }
                         }
 
-                        // Determine background style
                         let bgClass = "bg-zinc-800 hover:bg-zinc-750 border-zinc-700/60";
                         let multText = "";
                         let textClass = "text-[8px] font-extrabold tracking-tighter opacity-70";
@@ -1213,27 +1199,20 @@
                           textClass = "text-sm";
                         }
 
-                        // Selected state
-                        const isSelected = selectedCell && selectedCell.r === r && selectedCell.c === c;
-                        if (isSelected) {
-                          bgClass = "ring-2 ring-brand-500 ring-offset-2 ring-offset-zinc-950 bg-brand-500/20";
-                        }
-
                         return (
                           <div 
                             key={`cell-${r}-${c}`}
                             onClick={() => {
+                              // REQUIREMENT 3: Instant manual input on cell click
                               playSound('click');
-                              setSelectedCell(isSelected ? null : { r, c });
-                              // Pre-populate manual dialog position
                               setManualRow(r);
                               setManualCol(c);
+                              setShowManualModal(true);
                             }}
                             class={`aspect-square border rounded flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden ${bgClass}`}
-                            title={getCoordLabel(r, c)}
+                            title={`Нажмите, чтобы вписать ход от ячейки ${getCoordLabel(r, c)}`}
                           >
                             
-                            {/* Render Permanent Wood-like Tile if populated */}
                             {tileLetter ? (
                               <div class="absolute inset-0 bg-gradient-to-br from-amber-200 to-amber-500 text-zinc-950 flex flex-col items-center justify-center rounded shadow-inner">
                                 <span class="text-xs md:text-sm font-extrabold leading-none">{tileLetter}</span>
@@ -1242,7 +1221,6 @@
                                 </span>
                               </div>
                             ) : ghostLetter ? (
-                              /* Render Translucent Ghost Letter Preview */
                               <div class="absolute inset-0 bg-brand-500/40 text-brand-100 flex flex-col items-center justify-center rounded animate-pulse">
                                 <span class="text-xs md:text-sm font-black leading-none">{ghostLetter}</span>
                                 <span class="absolute bottom-0.5 right-0.5 text-[7px] font-bold text-brand-200 leading-none">
@@ -1250,7 +1228,6 @@
                                 </span>
                               </div>
                             ) : (
-                              /* Render grid indicator text */
                               <span class={`text-center leading-none uppercase ${textClass}`}>{multText}</span>
                             )}
 
@@ -1262,11 +1239,10 @@
 
                 </div>
 
-                {/* Sub-board helper info */}
                 <div class="mt-3 flex justify-between items-center text-xs text-zinc-400">
                   <div class="flex items-center gap-1">
                     <span class="inline-block w-2.5 h-2.5 rounded border border-zinc-600 bg-zinc-800"></span>
-                    <span>Пустое поле</span>
+                    <span>Пустая ячейка (Клик для ввода хода)</span>
                   </div>
                   <div class="flex items-center gap-1">
                     <span class="inline-block w-2.5 h-2.5 rounded border border-red-500/40 bg-red-500/20"></span>
@@ -1275,14 +1251,6 @@
                   <div class="flex items-center gap-1">
                     <span class="inline-block w-2.5 h-2.5 rounded border border-amber-500/40 bg-amber-500/20"></span>
                     <span>x2 Слово</span>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    <span class="inline-block w-2.5 h-2.5 rounded border border-blue-500/40 bg-blue-500/20"></span>
-                    <span>x3 Буква</span>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    <span class="inline-block w-2.5 h-2.5 rounded border border-emerald-500/40 bg-emerald-500/20"></span>
-                    <span>x2 Буква</span>
                   </div>
                 </div>
 
@@ -1296,7 +1264,7 @@
                   class="bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs py-2.5 px-3 rounded-xl border border-zinc-700 transition flex items-center justify-center gap-1.5"
                 >
                   <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                  Вписать Ход
+                  Вписать Ход вручную
                 </button>
 
                 <button 
@@ -1313,10 +1281,9 @@
                   class="bg-red-950/30 hover:bg-red-950/60 text-red-400 font-medium text-xs py-2.5 px-3 rounded-xl border border-red-900/40 transition flex items-center justify-center gap-1.5"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  Сбросить Доску
+                  Новая партия
                 </button>
 
-                {/* File Dictionary Upload Dropzone */}
                 <label class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-xs py-2.5 px-3 rounded-xl border border-zinc-700 transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
                   <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                   Загрузить Словарь
@@ -1330,15 +1297,15 @@
             {/* RIGHT AREA: PLAYERS RACK, SOLVER RECOMMENDATIONS, LETTERS STATS */}
             <section class="lg:col-span-5 flex flex-col gap-6">
               
-              {/* ---モイ НАБОР (THE RACK INPUT AREA) --- */}
+              {/* --- RACK INPUT AREA --- */}
               <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-lg flex flex-col gap-4">
                 
                 <div class="flex justify-between items-center">
                   <h2 class="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded bg-brand-500"></span>
-                    Мой Набор Фишек
+                    Мои фишки на руках
                   </h2>
-                  <span class="text-xs text-zinc-500 font-medium">До 7 фишек (звёздочка = *)</span>
+                  <span class="text-xs text-zinc-500 font-medium">Звёздочка = * (джокер)</span>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -1357,17 +1324,16 @@
                     class={`bg-brand-500 hover:bg-brand-600 disabled:bg-zinc-850 disabled:text-zinc-600 disabled:border-zinc-800 disabled:cursor-not-allowed border border-brand-500 text-zinc-950 font-bold px-5 py-3.5 rounded-xl transition flex items-center gap-2 text-sm shadow-md shadow-brand-500/10 ${isCalculating ? 'animate-pulse' : ''}`}
                   >
                     {isCalculating ? (
-                      <span>Расчёт...</span>
+                      <span>Анализ...</span>
                     ) : (
                       <>
-                        <span>Поиск</span>
+                        <span>Подобрать</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                       </>
                     )}
                   </button>
                 </div>
 
-                {/* Render visual rack tiles */}
                 {rack.length > 0 && (
                   <div class="flex flex-wrap gap-2 pt-2 border-t border-zinc-800">
                     {rack.toUpperCase().split('').map((char, index) => (
@@ -1383,65 +1349,49 @@
 
               </div>
 
-              {/* --- COGNITIVE ADVISOR & SUGGESTIONS TABS --- */}
-              <div class={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-lg flex-grow flex flex-col min-h-[380px] ${activeTab === 'analysis' ? 'block' : 'hidden lg:block'}`}>
+              {/* --- RECOMMENDATIONS & ADVISOR ZONE --- */}
+              <div class={`bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-lg flex flex-col min-h-[380px] ${activeTab === 'analysis' ? 'block' : 'hidden lg:block'}`}>
                 
-                {/* Header with quick stats */}
-                <div class="border-b border-zinc-800 bg-zinc-900/80 px-4 py-3 flex items-center justify-between">
+                <div class="border-b border-zinc-800 bg-zinc-900/80 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <h3 class="font-bold text-xs uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-brand-500 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    Рекомендованные Ходы
+                    <svg class="w-4 h-4 text-brand-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Рекомендованные ИИ Ходы
                   </h3>
-                  <span class="text-[10px] text-zinc-500 font-semibold bg-zinc-950 px-2 py-0.5 rounded-full">
-                    {suggestions.standard.length + suggestions.tactical.length} найдено
-                  </span>
+                  
+                  {/* REQUIREMENT 2: Dynamic Sorter options */}
+                  <div class="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+                    <button 
+                      onClick={() => setSortBy('score')}
+                      class={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${sortBy === 'score' ? 'bg-brand-500 text-zinc-950' : 'text-zinc-400'}`}
+                    >
+                      Очки
+                    </button>
+                    <button 
+                      onClick={() => setSortBy('tactical')}
+                      class={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${sortBy === 'tactical' ? 'bg-brand-500 text-zinc-950' : 'text-zinc-400'}`}
+                    >
+                      Защита
+                    </button>
+                    <button 
+                      onClick={() => setSortBy('length')}
+                      class={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${sortBy === 'length' ? 'bg-brand-500 text-zinc-950' : 'text-zinc-400'}`}
+                    >
+                      Длина
+                    </button>
+                  </div>
                 </div>
 
-                {/* Selector categories */}
-                <div class="grid grid-cols-3 bg-zinc-950 p-1 border-b border-zinc-800">
+                <div class="p-3 flex-grow overflow-y-auto max-h-[360px] flex flex-col gap-2">
                   
-                  <button 
-                    onClick={() => { playSound('click'); }}
-                    class="py-2 text-[11px] font-bold text-zinc-300 rounded transition flex flex-col items-center justify-center gap-0.5 hover:bg-zinc-900 focus:bg-zinc-900"
-                    style={{ outline: 'none' }}
-                  >
-                    <span>🎯 Макс. Очки</span>
-                    <span class="text-[9px] font-normal text-zinc-500">{suggestions.standard.length} вариантов</span>
-                  </button>
-
-                  <button 
-                    onClick={() => { playSound('click'); }}
-                    class="py-2 text-[11px] font-bold text-zinc-300 rounded transition flex flex-col items-center justify-center gap-0.5 hover:bg-zinc-900 focus:bg-zinc-900"
-                    style={{ outline: 'none' }}
-                  >
-                    <span>🛡️ Защита / Баланс</span>
-                    <span class="text-[9px] font-normal text-zinc-500">{suggestions.tactical.length} вариантов</span>
-                  </button>
-
-                  <button 
-                    onClick={() => { playSound('click'); }}
-                    class="py-2 text-[11px] font-bold text-zinc-300 rounded transition flex flex-col items-center justify-center gap-0.5 hover:bg-zinc-900 focus:bg-zinc-900"
-                    style={{ outline: 'none' }}
-                  >
-                    <span>💎 С джокерами</span>
-                    <span class="text-[9px] font-normal text-zinc-500">{suggestions.jokerAssisted.length} вариантов</span>
-                  </button>
-
-                </div>
-
-                {/* Suggestion scroll container */}
-                <div class="p-3 flex-grow overflow-y-auto max-h-[420px] flex flex-col gap-2">
-                  
-                  {suggestions.standard.length === 0 && suggestions.jokerAssisted.length === 0 && (
+                  {sortedSuggestions.standard.length === 0 && sortedSuggestions.jokerAssisted.length === 0 && (
                     <div class="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500">
                       <svg class="w-12 h-12 text-zinc-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 .364l-.707 .707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548 .547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-                      <p class="text-xs font-semibold">Готов к анализу</p>
-                      <p class="text-[10px] text-zinc-600">Впишите буквы на руках и нажмите «Поиск» для запуска ИИ</p>
+                      <p class="text-xs font-semibold">Готов к анализу ситуации</p>
+                      <p class="text-[10px] text-zinc-600">Впишите буквы на руках и нажмите «Подобрать»</p>
                     </div>
                   )}
 
-                  {/* Standard Moves category list */}
-                  {suggestions.standard.map((play, index) => (
+                  {sortedSuggestions.standard.map((play, index) => (
                     <div 
                       key={`play-std-${index}`}
                       onMouseEnter={() => setHoveredSuggestion(play)}
@@ -1449,7 +1399,6 @@
                       class="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 hover:border-brand-500/40 transition relative flex justify-between items-center group"
                     >
                       <div class="flex flex-col gap-1">
-                        
                         <div class="flex items-center gap-2">
                           <span class="font-extrabold text-base tracking-wide text-white">{play.word}</span>
                           <span class="text-[10px] font-bold text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
@@ -1462,27 +1411,17 @@
                           {play.newLettersCount === 7 && <span class="text-emerald-400 font-bold">🎉 Бонус +15</span>}
                         </div>
 
-                        {/* Tactical Alerts inside cards */}
-                        {play.defenseAlerts.length > 0 && (
-                          <div class="mt-1 flex flex-col gap-0.5">
-                            {play.defenseAlerts.map((alt, ai) => (
-                              <span key={ai} class="text-[9px] text-red-400 flex items-center gap-1">
-                                ⚠️ {alt}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        {play.defenseAlerts.map((alt, ai) => (
+                          <span key={ai} class="text-[9px] text-red-400 flex items-center gap-1">
+                            ⚠️ {alt}
+                          </span>
+                        ))}
 
-                        {play.strategicBlocks.length > 0 && (
-                          <div class="mt-1 flex flex-col gap-0.5">
-                            {play.strategicBlocks.map((blk, bi) => (
-                              <span key={bi} class="text-[9px] text-emerald-400 flex items-center gap-1">
-                                {blk}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
+                        {play.strategicBlocks.map((blk, bi) => (
+                          <span key={bi} class="text-[9px] text-emerald-400 flex items-center gap-1">
+                            🛡️ {blk}
+                          </span>
+                        ))}
                       </div>
 
                       <div class="flex flex-col items-end gap-2">
@@ -1492,27 +1431,22 @@
                         </div>
 
                         <button 
-                          onClick={() => applyMove(play)}
-                          class="bg-zinc-900 group-hover:bg-brand-500 group-hover:text-zinc-950 border border-zinc-800 group-hover:border-brand-500 text-zinc-300 px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1"
+                          onClick={() => applyMove(play, 'Игрок')}
+                          class="bg-zinc-900 group-hover:bg-brand-500 group-hover:text-zinc-950 border border-zinc-800 group-hover:border-brand-500 text-zinc-300 px-2.5 py-1 rounded-lg text-[10px] font-bold transition"
                         >
-                          Применить
+                          Сыграть
                         </button>
                       </div>
-
                     </div>
                   ))}
 
-                  {/* Joker Assisted Moves category list */}
-                  {suggestions.jokerAssisted.length > 0 && (
+                  {sortedSuggestions.jokerAssisted.length > 0 && (
                     <div class="mt-4 border-t border-zinc-800/80 pt-3">
-                      <div class="flex justify-between items-center mb-2 px-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                          💎 Требуется докупить джокеров
-                        </span>
-                        <span class="text-[9px] text-zinc-500">Сжигайте лишнее для активации джокеров</span>
-                      </div>
+                      <p class="text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-2">
+                        💎 Варианты с покупкой джокеров:
+                      </p>
 
-                      {suggestions.jokerAssisted.map((play, index) => (
+                      {sortedSuggestions.jokerAssisted.map((play, index) => (
                         <div 
                           key={`play-jok-${index}`}
                           onMouseEnter={() => setHoveredSuggestion(play)}
@@ -1520,7 +1454,6 @@
                           class="bg-zinc-950/60 p-3 rounded-xl border border-amber-900/20 hover:border-amber-500/30 transition relative flex justify-between items-center group"
                         >
                           <div class="flex flex-col gap-1">
-                            
                             <div class="flex items-center gap-2">
                               <span class="font-extrabold text-base tracking-wide text-zinc-300">{play.word}</span>
                               <span class="text-[10px] font-bold text-amber-500 bg-amber-950/20 px-2 py-0.5 rounded border border-amber-900/30">
@@ -1529,19 +1462,8 @@
                             </div>
 
                             <div class="text-[10px] text-zinc-500 flex flex-wrap gap-x-2 gap-y-1">
-                              <span class="text-amber-400/80 font-semibold">💎 Требуется джокеров: {play.jokersNeeded}</span>
-                              <span>Новых букв: {play.newLettersCount}</span>
+                              <span class="text-amber-400/80 font-semibold">Требуется джокеров: {play.jokersNeeded}</span>
                             </div>
-
-                            {/* Tactical Corner blocks / vowel warnings on Joker plays */}
-                            {play.defenseAlerts.length > 0 && (
-                              <div class="mt-1 flex flex-col gap-0.5">
-                                {play.defenseAlerts.map((alt, ai) => (
-                                  <span key={ai} class="text-[9px] text-red-400">⚠️ {alt}</span>
-                                ))}
-                              </div>
-                            )}
-
                           </div>
 
                           <div class="flex flex-col items-end gap-2">
@@ -1552,16 +1474,15 @@
 
                             <button 
                               onClick={() => {
-                                if (confirm(`Для этого хода вам потребуется джокеров: ${play.jokersNeeded}. Выкупить джокеры и выложить слово на поле?`)) {
-                                  applyMove(play);
+                                if (confirm(`Вам потребуется пожертвовать фишками ради ${play.jokersNeeded} джокеров. Сыграть ход?`)) {
+                                  applyMove(play, 'Игрок');
                                 }
                               }}
-                              class="bg-amber-950/20 hover:bg-amber-500 hover:text-zinc-950 border border-amber-900/40 hover:border-amber-500 text-amber-400 px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1"
+                              class="bg-amber-950/20 hover:bg-amber-500 hover:text-zinc-950 border border-amber-900/40 hover:border-amber-500 text-amber-400 px-2.5 py-1 rounded-lg text-[10px] font-bold transition"
                             >
-                              Применить
+                              Сыграть
                             </button>
                           </div>
-
                         </div>
                       ))}
                     </div>
@@ -1571,31 +1492,78 @@
 
               </div>
 
-              {/* --- REAL-TIME BAG STATUS AND PROBABILITY ANALYSIS --- */}
+              {/* --- REQUIREMENT 1: GAME MATCH STATISTICS & HISTORY SECTION --- */}
+              <div class={`bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-lg flex flex-col gap-4 ${activeTab === 'timeline' ? 'block' : 'hidden lg:block'}`}>
+                
+                <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded bg-emerald-500"></span>
+                    Протокол партии (Ходы)
+                  </h3>
+                  <span class="text-xs font-semibold text-zinc-400">
+                    Всего ходов: <span class="text-emerald-400 font-bold">{movesList.length}</span>
+                  </span>
+                </div>
+
+                <div class="overflow-y-auto max-h-[220px] flex flex-col gap-2 pr-1">
+                  {movesList.length === 0 ? (
+                    <p class="text-zinc-500 text-xs text-center py-6">Ни одного хода ещё не записано. Сделайте первый ход на доске или добавьте вручную!</p>
+                  ) : (
+                    [...movesList].reverse().map((move, index) => (
+                      <div key={move.id} class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800/60 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                          <span class="text-[10px] font-bold text-zinc-600 bg-zinc-900 px-1.5 py-1 rounded">
+                            #{movesList.length - index}
+                          </span>
+                          <div>
+                            <p class="text-xs font-bold flex items-center gap-1.5">
+                              <span class={move.player === 'Игрок' ? 'text-brand-400' : 'text-red-400'}>
+                                {move.player}
+                              </span>
+                              <span class="text-white font-extrabold tracking-wider uppercase bg-zinc-900 px-1.5 py-0.5 rounded text-[11px] border border-zinc-800">
+                                {move.word}
+                              </span>
+                            </p>
+                            <p class="text-[10px] text-zinc-500 mt-0.5">
+                              Ячейка: <span class="text-zinc-300 font-medium">{move.coord}</span> ({move.dir}) • Выставлено фишек: {move.newlyPlaced}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div class="text-right">
+                          <span class="text-[9px] text-zinc-500 block leading-none">{move.timestamp}</span>
+                          <span class="text-sm font-black text-emerald-400 block mt-1">+{move.score}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+              </div>
+
+              {/* --- BAG STATUS & LETTER DISTRIBUTION --- */}
               <div class={`bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-lg flex flex-col gap-4 ${activeTab === 'stats' ? 'block' : 'hidden lg:block'}`}>
                 
                 <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
                   <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded bg-amber-500"></span>
-                    Остаток Букв в Мешке
+                    Мешок букв
                   </h3>
                   <span class="text-xs font-semibold text-zinc-300 bg-zinc-950 px-2.5 py-1 rounded-lg">
                     Осталось: <span class="text-amber-400 font-bold">{bagStatus.total}</span> из 108 шт
                   </span>
                 </div>
 
-                {/* Live Probability distribution matrix */}
-                <div class="grid grid-cols-6 sm:grid-cols-9 gap-1.5 max-h-[180px] overflow-y-auto pr-1">
+                <div class="grid grid-cols-6 sm:grid-cols-9 gap-1.5 max-h-[140px] overflow-y-auto pr-1">
                   {Object.entries(bagStatus.counts)
-                    .sort((a, b) => b[1] - a[1]) // Sort remaining letters descending
+                    .sort((a, b) => b[1] - a[1])
                     .map(([char, count]) => {
                       const isZero = count === 0;
-                      const initialCount = INITIAL_BAG[char] || 1;
                       const percentage = Math.round((count / bagStatus.total) * 100);
                       
                       return (
                         <div 
-                          key={`bag-item-${char}`}
+                          key={`bag-${char}`}
                           class={`p-1.5 rounded-lg border flex flex-col items-center justify-between transition-all ${isZero ? 'bg-zinc-950/40 border-zinc-900/80 opacity-30 text-zinc-600' : 'bg-zinc-950 border-zinc-800/80 hover:border-zinc-700 text-zinc-200'}`}
                         >
                           <span class="text-xs font-extrabold leading-none">{char === '*' ? '★' : char}</span>
@@ -1610,29 +1578,13 @@
                     })}
                 </div>
 
-                {/* Burned tiles recovery information */}
-                {Object.keys(burnedTiles).length > 0 && (
-                  <div class="p-3 bg-red-950/20 border border-red-900/30 rounded-xl flex flex-col gap-1.5">
-                    <p class="text-[11px] text-red-400 font-bold uppercase tracking-wider">
-                      🔥 Сожженные фишки в этой партии:
-                    </p>
-                    <div class="flex flex-wrap gap-1.5">
-                      {Object.entries(burnedTiles).map(([char, count]) => (
-                        <span key={char} class="text-xs font-bold text-zinc-100 bg-red-900/40 border border-red-800/40 px-2 py-0.5 rounded">
-                          {char}: {count} шт
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
               </div>
 
             </section>
 
           </main>
 
-          {/* --- MANUAL PLACEMENT MODAL DIALOG (Add Word wizard) --- */}
+          {/* --- MANUAL PLACEMENT MODAL DIALOG --- */}
           {showManualModal && (
             <div class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
               <div class="bg-zinc-900 w-full max-w-md rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-150">
@@ -1652,6 +1604,14 @@
 
                 <div class="p-5 flex flex-col gap-4">
                   
+                  {/* Prefilled Location indicator */}
+                  <div class="p-3 bg-zinc-950 rounded-xl border border-zinc-800 text-xs text-zinc-400 flex justify-between items-center">
+                    <span>Выбранная начальная ячейка:</span>
+                    <span class="font-extrabold text-brand-500 text-sm bg-brand-500/10 border border-brand-500/20 px-2.5 py-1 rounded">
+                      {getCoordLabel(manualRow, manualCol)}
+                    </span>
+                  </div>
+
                   {/* Word Input */}
                   <div class="flex flex-col gap-1">
                     <label class="text-xs font-bold text-zinc-400 uppercase">Слово</label>
@@ -1660,37 +1620,20 @@
                       value={manualWord}
                       onChange={(e) => setManualWord(e.target.value)}
                       placeholder="Впишите сыгранное слово"
-                      class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 uppercase tracking-wider"
+                      class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 uppercase tracking-wider text-center text-lg"
                     />
                   </div>
 
-                  {/* Row & Col selection */}
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="flex flex-col gap-1">
-                      <label class="text-xs font-bold text-zinc-400 uppercase">Строка (1-15)</label>
-                      <select 
-                        value={manualRow}
-                        onChange={(e) => setManualRow(parseInt(e.target.value, 10))}
-                        class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 font-bold focus:outline-none"
-                      >
-                        {Array(15).fill(0).map((_, i) => (
-                          <option key={i} value={i}>{i + 1}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                      <label class="text-xs font-bold text-zinc-400 uppercase">Столбец (A-O)</label>
-                      <select 
-                        value={manualCol}
-                        onChange={(e) => setManualCol(parseInt(e.target.value, 10))}
-                        class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 font-bold focus:outline-none"
-                      >
-                        {Array(15).fill(0).map((_, i) => (
-                          <option key={i} value={i}>{String.fromCharCode(65 + i)}</option>
-                        ))}
-                      </select>
-                    </div>
+                  {/* Score */}
+                  <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-zinc-400 uppercase">Очки (Оставьте пустым для авторасчёта базовой стоимости)</label>
+                    <input 
+                      type="number" 
+                      value={manualScore}
+                      onChange={(e) => setManualScore(e.target.value)}
+                      placeholder="Например: 24"
+                      class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 text-center"
+                    />
                   </div>
 
                   {/* Direction */}
@@ -1714,11 +1657,11 @@
 
                   {/* Performer */}
                   <div class="flex flex-col gap-1">
-                    <label class="text-xs font-bold text-zinc-400 uppercase">Исполнитель</label>
+                    <label class="text-xs font-bold text-zinc-400 uppercase">Исполнитель хода</label>
                     <div class="grid grid-cols-2 gap-2">
                       <button 
                         onClick={() => { playSound('click'); setManualPlayer('Соперник'); }}
-                        class={`py-2.5 font-bold rounded-xl border text-xs ${manualPlayer === 'Соперник' ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-500'}`}
+                        class={`py-2.5 font-bold rounded-xl border text-xs ${manualPlayer === 'Соперник' ? 'bg-red-500/20 border-red-500 text-red-300' : 'bg-zinc-950 border-zinc-800 text-zinc-500'}`}
                       >
                         😈 Соперник
                       </button>
@@ -1745,7 +1688,7 @@
                     onClick={submitManualMove}
                     class="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-extrabold text-xs py-2 px-5 rounded-lg border border-brand-500 transition shadow-md shadow-brand-500/10"
                   >
-                    Применить Ход
+                    Зафиксировать ход
                   </button>
                 </div>
 
@@ -1753,14 +1696,14 @@
             </div>
           )}
 
-          {/* --- FOOTER BRAGGING --- */}
+          {/* --- FOOTER --- */}
           <footer class="border-t border-zinc-800 bg-zinc-900/30 px-4 py-4 text-center text-xs text-zinc-500">
             <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
               <p>© 2026 Эрудит Помощник Pro. Разработано с использованием React, Tailwind CSS и ИИ.</p>
               <div class="flex gap-4">
                 <a href="#" class="hover:text-zinc-300 transition">GitHub репозиторий</a>
                 <span class="text-zinc-700">|</span>
-                <span class="text-zinc-400">Версия 1.4.0 (PWA Ready)</span>
+                <span class="text-zinc-400">Версия 1.5.0 (PWA Ready)</span>
               </div>
             </div>
           </footer>
@@ -1769,7 +1712,6 @@
       );
     }
 
-    // Render React Dom
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
